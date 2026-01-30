@@ -1,0 +1,36 @@
+{
+  "name": "mdbase-cli",
+  "version": "0.1.0",
+  "description": "CLI tool for mdbase collections — validate, query, CRUD, and execute Obsidian .base files",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "mdbase": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "mdbase": "file:../mdbase",
+    "commander": "^12.0.0",
+    "chalk": "^5.3.0",
+    "js-yaml": "^4.1.0",
+    "gray-matter": "^4.0.3",
+    "picomatch": "^4.0.0",
+    "cli-table3": "^0.6.0",
+    "csv-stringify": "^6.0.0",
+    "csv-parse": "^5.0.0",
+    "chokidar": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0",
+    "tsx": "^4.0.0",
+    "vitest": "^2.0.0"
+  }
+}

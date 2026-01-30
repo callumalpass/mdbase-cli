@@ -1,0 +1,16 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Ralph Loop files
+PROMPT.md
+AGENTS.md
+PROGRESS.md
+loop.sh
+
+# Obsidian reference material
+obsidian-api/
+obsidian-help/
+
+# Test artifacts
+.mdbase-test-*/
