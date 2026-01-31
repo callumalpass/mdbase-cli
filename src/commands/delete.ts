@@ -1,12 +1,90 @@
 import { Command } from "commander";
+import path from "node:path";
+import chalk from "chalk";
+import { Collection } from "mdbase";
+import yaml from "js-yaml";
 
 export function registerDelete(program: Command): void {
   program
     .command("delete <path>")
     .description("Delete a file from the collection")
-    .option("--force", "Skip confirmation")
+    .option("--force", "Skip confirmation and delete even with broken links")
+    .option("--no-check-backlinks", "Skip broken link detection")
+    .option("--format <format>", "Output format: text, json, yaml", "text")
     .action(async (filePath: string, opts) => {
-      // TODO: implement
-      console.log("delete", filePath, opts);
+      const cwd = process.cwd();
+
+      // Open the collection
+      const openResult = Collection.open(cwd);
+      if (openResult.error) {
+        if (opts.format === "json") {
+          console.log(JSON.stringify({ error: openResult.error }, null, 2));
+        } else {
+          console.error(chalk.red(`error: ${openResult.error.message}`));
+        }
+        process.exit(3);
+      }
+      const collection = openResult.collection!;
+
+      const relativePath = path.relative(cwd, path.resolve(cwd, filePath));
+
+      const result = collection.delete(relativePath, {
+        check_backlinks: opts.checkBacklinks !== false,
+      });
+
+      if (result.error) {
+        const exitCode = result.error.code === "file_not_found" ? 4
+          : result.error.code === "permission_denied" ? 5
+          : 1;
+
+        if (opts.format === "json") {
+          console.log(JSON.stringify({ error: result.error }, null, 2));
+        } else {
+          console.error(chalk.red(`error: ${result.error.message}`));
+        }
+        process.exit(exitCode);
+      }
+
+      const brokenLinks = result.broken_links ?? [];
+
+      switch (opts.format) {
+        case "json": {
+          const output: Record<string, unknown> = {
+            path: relativePath,
+            deleted: true,
+          };
+          if (brokenLinks.length > 0) {
+            output.broken_links = brokenLinks;
+          }
+          console.log(JSON.stringify(output, null, 2));
+          break;
+        }
+
+        case "yaml": {
+          const output: Record<string, unknown> = {
+            path: relativePath,
+            deleted: true,
+          };
+          if (brokenLinks.length > 0) {
+            output.broken_links = brokenLinks;
+          }
+          console.log(yaml.dump(output, { lineWidth: -1, noRefs: true }).trimEnd());
+          break;
+        }
+
+        case "text":
+        default: {
+          console.log(`${chalk.green("deleted")} ${chalk.bold(relativePath)}`);
+          if (brokenLinks.length > 0) {
+            console.log(chalk.yellow(`\n  ${brokenLinks.length} broken link${brokenLinks.length === 1 ? "" : "s"}:`));
+            for (const link of brokenLinks) {
+              console.log(`    ${chalk.dim("→")} ${link.path}`);
+            }
+          }
+          break;
+        }
+      }
+
+      process.exit(0);
     });
 }
