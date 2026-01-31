@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: mdbase-cli
+
+      - uses: actions/checkout@v4
+        with:
+          repository: callumalpass/mdbase
+          path: mdbase
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install and build mdbase
+        working-directory: mdbase
+        run: npm ci && npm run build
+
+      - name: Install dependencies
+        working-directory: mdbase-cli
+        run: npm ci
+
+      - name: Build
+        working-directory: mdbase-cli
+        run: npm run build
+
+      - name: Test
+        working-directory: mdbase-cli
+        run: npm test
