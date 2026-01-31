@@ -1,0 +1,19 @@
+filters: 'rating >= 4'
+
+formulas:
+  stars: 'if(rating >= 4, "***", "*")'
+
+properties:
+  title:
+    displayName: Title
+  formula.stars:
+    displayName: Stars
+
+views:
+  - type: table
+    name: "High Rated"
+    order:
+      - note.title
+      - note.rating
+      - formula.stars
+    limit: 10

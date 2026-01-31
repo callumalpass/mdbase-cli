@@ -1,0 +1,18 @@
+formulas:
+  has_tags: 'tags != null'
+
+views:
+  - type: table
+    name: "Table View"
+    order:
+      - note.title
+      - note.rating
+  - type: table
+    name: "Sorted View"
+    groupBy:
+      property: note.rating
+      direction: DESC
+    order:
+      - note.title
+      - note.rating
+      - formula.has_tags

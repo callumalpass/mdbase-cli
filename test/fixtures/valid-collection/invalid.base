@@ -1,0 +1,9 @@
+formulas:
+  circular: 'formula.circular + 1'
+
+views:
+  - type: unknown_type
+    name: "Bad View"
+    limit: -5
+    groupBy:
+      direction: SIDEWAYS

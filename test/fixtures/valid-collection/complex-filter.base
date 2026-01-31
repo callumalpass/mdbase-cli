@@ -1,0 +1,12 @@
+filters:
+  and:
+    - 'rating >= 2'
+    - 'title != null'
+
+views:
+  - type: table
+    name: "Filtered"
+    filters: 'rating <= 4'
+    order:
+      - note.title
+      - note.rating
