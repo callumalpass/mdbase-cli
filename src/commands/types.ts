@@ -43,9 +43,9 @@ function formatFieldConstraints(field: FieldDefinition): string[] {
   return parts;
 }
 
-function loadTypesFromCwd(format: string): Map<string, TypeDefinition> {
+async function loadTypesFromCwd(format: string): Promise<Map<string, TypeDefinition>> {
   const cwd = process.cwd();
-  const configResult = loadConfig(cwd);
+  const configResult = await loadConfig(cwd);
   if (!configResult.valid || !configResult.config) {
     if (format === "json") {
       console.log(JSON.stringify({ error: configResult.error }, null, 2));
@@ -55,7 +55,7 @@ function loadTypesFromCwd(format: string): Map<string, TypeDefinition> {
     process.exit(3);
   }
 
-  const typesResult = loadTypes(cwd, configResult.config);
+  const typesResult = await loadTypes(cwd, configResult.config);
   if (!typesResult.valid || !typesResult.types) {
     if (format === "json") {
       console.log(JSON.stringify({ error: typesResult.error }, null, 2));
@@ -78,7 +78,7 @@ export function registerTypes(program: Command): void {
     .description("List all type definitions")
     .option("--format <format>", "Output format: text, json, yaml", "text")
     .action(async (opts) => {
-      const typeDefs = loadTypesFromCwd(opts.format);
+      const typeDefs = await loadTypesFromCwd(opts.format);
 
       const typeList = Array.from(typeDefs.values()).map((t) => ({
         name: t.name,
@@ -135,7 +135,7 @@ export function registerTypes(program: Command): void {
     .option("--format <format>", "Output format: text, json, yaml", "text")
     .action(async (name: string, opts) => {
       const cwd = process.cwd();
-      const configResult = loadConfig(cwd);
+      const configResult = await loadConfig(cwd);
       if (!configResult.valid || !configResult.config) {
         if (opts.format === "json") {
           console.log(JSON.stringify({ error: configResult.error }, null, 2));
@@ -145,7 +145,7 @@ export function registerTypes(program: Command): void {
         process.exit(3);
       }
 
-      const result = getType(cwd, configResult.config, name);
+      const result = await getType(cwd, configResult.config, name);
 
       if (result.error) {
         const exitCode = result.error.code === "unknown_type" ? 1 : 1;

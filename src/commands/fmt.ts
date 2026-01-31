@@ -41,9 +41,9 @@ export function registerFmt(program: Command): void {
       const collection = openResult.collection!;
 
       // Load types for field ordering
-      const configResult = loadConfig(cwd);
+      const configResult = await loadConfig(cwd);
       const typesResult = configResult.config
-        ? loadTypes(cwd, configResult.config)
+        ? await loadTypes(cwd, configResult.config)
         : undefined;
       const typeDefs: Map<string, TypeDefinition> = typesResult?.types ?? new Map();
 
