@@ -6,5 +6,4 @@ tags:
   - test
 rating: 5
 ---
-
 This is a valid note.
