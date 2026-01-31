@@ -7,7 +7,7 @@
 
 export { parseBaseFile, parseBaseFilePath } from "./base/parser.js";
 export type { BaseFile, BaseView, BaseFilter, FilterExpression } from "./base/parser.js";
-export { executeBase, filterToWhere } from "./base/executor.js";
+export { executeBase } from "./base/executor.js";
 export type { BaseResult } from "./base/executor.js";
-export { formatResults } from "./base/formatter.js";
+export { printResults } from "./base/formatter.js";
 export type { OutputFormat } from "./base/formatter.js";

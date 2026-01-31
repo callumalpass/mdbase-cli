@@ -53,4 +53,4 @@ registerWatch(program);
 registerDiff(program);
 registerSchema(program);
 
-program.parse();
+await program.parseAsync();
