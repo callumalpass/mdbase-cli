@@ -13,7 +13,7 @@ export function registerRename(program: Command): void {
     .action(async (from: string, to: string, opts) => {
       const cwd = process.cwd();
 
-      const openResult = Collection.open(cwd);
+      const openResult = await Collection.open(cwd);
       if (openResult.error) {
         if (opts.format === "json") {
           console.log(JSON.stringify({ error: openResult.error }, null, 2));
@@ -27,7 +27,7 @@ export function registerRename(program: Command): void {
       const relativeFrom = path.relative(cwd, path.resolve(cwd, from));
       const relativeTo = path.relative(cwd, path.resolve(cwd, to));
 
-      const result = collection.rename({
+      const result = await collection.rename({
         from: relativeFrom,
         to: relativeTo,
         update_refs: opts.refs !== false ? undefined : false,

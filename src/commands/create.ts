@@ -59,7 +59,7 @@ export function registerCreate(program: Command): void {
       const cwd = process.cwd();
 
       // Open the collection
-      const openResult = Collection.open(cwd);
+      const openResult = await Collection.open(cwd);
       if (openResult.error) {
         if (opts.format === "json") {
           console.log(JSON.stringify({ error: openResult.error }, null, 2));
@@ -104,7 +104,7 @@ export function registerCreate(program: Command): void {
         input.body = body;
       }
 
-      const result = collection.create(input);
+      const result = await collection.create(input);
       outputResult(result, relativePath, opts);
     });
 }

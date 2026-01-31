@@ -271,7 +271,7 @@ export function registerTypes(program: Command): void {
     .action(async (name: string, opts) => {
       const cwd = process.cwd();
 
-      const openResult = Collection.open(cwd);
+      const openResult = await Collection.open(cwd);
       if (openResult.error) {
         if (opts.format === "json") {
           console.log(JSON.stringify({ error: openResult.error }, null, 2));
@@ -325,7 +325,7 @@ export function registerTypes(program: Command): void {
       if (fields) input.fields = fields;
       if (opts.pathPattern) input.path_pattern = opts.pathPattern;
 
-      const result = collection.createType(input);
+      const result = await collection.createType(input);
 
       if (result.error) {
         const exitCode = result.error.code === "path_conflict" ? 1

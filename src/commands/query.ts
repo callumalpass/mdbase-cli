@@ -51,7 +51,7 @@ export function registerQuery(program: Command): void {
     .action(async (expression: string | undefined, opts) => {
       const cwd = process.cwd();
 
-      const openResult = Collection.open(cwd);
+      const openResult = await Collection.open(cwd);
       if (openResult.error) {
         if (opts.format === "json") {
           console.log(JSON.stringify({ error: openResult.error }, null, 2));
@@ -87,7 +87,7 @@ export function registerQuery(program: Command): void {
         }
       }
 
-      const queryResult = collection.query({
+      const queryResult = await collection.query({
         types: opts.types,
         where: expression,
         order_by: orderBy,

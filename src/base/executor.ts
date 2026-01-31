@@ -46,11 +46,11 @@ export interface ExecuteOptions {
 /**
  * Execute a .base file against a collection and return results for each view.
  */
-export function executeBase(
+export async function executeBase(
   baseFile: BaseFile,
   collection: Collection,
   opts: ExecuteOptions = {},
-): BaseResult[] {
+): Promise<BaseResult[]> {
   // Determine which views to execute
   let views = baseFile.views ?? [{ type: "table" as const }];
   if (opts.viewName) {
@@ -72,7 +72,7 @@ export function executeBase(
   const results: BaseResult[] = [];
 
   for (const view of views) {
-    const result = executeView(baseFile, view, collection, opts);
+    const result = await executeView(baseFile, view, collection, opts);
     results.push(result);
   }
 
@@ -82,12 +82,12 @@ export function executeBase(
 /**
  * Execute a single view from a .base file.
  */
-function executeView(
+async function executeView(
   baseFile: BaseFile,
   view: BaseView,
   collection: Collection,
   opts: ExecuteOptions,
-): BaseResult {
+): Promise<BaseResult> {
   // 1. Build the where clause by combining global + view filters
   const where = buildWhere(baseFile.filters, view.filters);
 
@@ -100,13 +100,25 @@ function executeView(
   // 3. Determine limit
   const limit = opts.limit ?? view.limit;
 
-  // 4. Execute query
-  const queryResult = collection.query({
+  // 4. Filter out empty formulas and translate Obsidian syntax
+  let formulas = baseFile.formulas;
+  if (formulas) {
+    const filtered: Record<string, string> = {};
+    for (const [name, expr] of Object.entries(formulas)) {
+      if (name !== "" && typeof expr === "string" && expr !== "") {
+        filtered[name] = translateExpression(expr);
+      }
+    }
+    formulas = Object.keys(filtered).length > 0 ? filtered : undefined;
+  }
+
+  // 5. Execute query
+  const queryResult = await collection.query({
     where,
     order_by: orderBy,
     limit,
     include_body: opts.includeBody ?? false,
-    formulas: baseFile.formulas,
+    formulas,
   });
 
   if (queryResult.error) {
@@ -225,7 +237,16 @@ function translateExpression(expr: string): string {
   //
   // Simple approach: replace word-boundary `note.` with nothing,
   // being careful not to replace inside string literals.
-  return expr.replace(/\bnote\./g, "");
+  let result = expr.replace(/\bnote\./g, "");
+
+  // Translate Obsidian's file(field) to mdbase's field.asFile()
+  // e.g. file(customer) → customer.asFile()
+  result = result.replace(/\bfile\(([^)]+)\)/g, "$1.asFile()");
+
+  // Obsidian's icon() is purely decorative — return the argument as a string
+  result = result.replace(/\bicon\(([^)]+)\)/g, "$1");
+
+  return result;
 }
 
 /**

@@ -58,7 +58,7 @@ export function registerUpdate(program: Command): void {
       const cwd = process.cwd();
 
       // Open the collection
-      const openResult = Collection.open(cwd);
+      const openResult = await Collection.open(cwd);
       if (openResult.error) {
         if (opts.format === "json") {
           console.log(JSON.stringify({ error: openResult.error }, null, 2));
@@ -104,7 +104,7 @@ export function registerUpdate(program: Command): void {
         input.body = body;
       }
 
-      const result = collection.update(input);
+      const result = await collection.update(input);
 
       if (result.error) {
         const exitCode = result.error.code === "file_not_found" ? 4

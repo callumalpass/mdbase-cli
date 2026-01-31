@@ -4,6 +4,18 @@ import chalk from "chalk";
 import { Collection } from "mdbase";
 import yaml from "js-yaml";
 
+type ReadResultExtras = {
+  warnings?: Array<{ code: string; message: string; field?: string }>;
+  file?: {
+    name?: string;
+    folder?: string;
+    path?: string;
+    mtime?: string;
+    ctime?: string;
+    size?: number;
+  };
+};
+
 function formatValue(value: unknown): string {
   if (value === null || value === undefined) return chalk.dim("null");
   if (Array.isArray(value)) return `[${value.map(String).join(", ")}]`;
@@ -20,7 +32,7 @@ export function registerRead(program: Command): void {
     .action(async (filePath: string, opts) => {
       const cwd = process.cwd();
 
-      const openResult = Collection.open(cwd);
+      const openResult = await Collection.open(cwd);
       if (openResult.error) {
         if (opts.format === "json") {
           console.log(JSON.stringify({ error: openResult.error }, null, 2));
@@ -32,7 +44,10 @@ export function registerRead(program: Command): void {
       const collection = openResult.collection!;
 
       const relativePath = path.relative(cwd, path.resolve(cwd, filePath));
-      const result = collection.read(relativePath);
+      const result = await collection.read(relativePath) as Awaited<ReturnType<
+        Collection["read"]
+      >> &
+        ReadResultExtras;
 
       if (result.error) {
         const exitCode = result.error.code === "file_not_found" ? 4

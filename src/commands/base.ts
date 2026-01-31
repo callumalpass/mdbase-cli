@@ -4,6 +4,7 @@ import chalk from "chalk";
 import * as yaml from "js-yaml";
 import { Collection } from "mdbase";
 import { parseBaseFilePath } from "../base/parser.js";
+import type { BaseFile } from "../base/parser.js";
 import { executeBase, BaseExecutionError } from "../base/executor.js";
 import { printResults } from "../base/formatter.js";
 import type { OutputFormat } from "../base/formatter.js";
@@ -42,7 +43,7 @@ export function registerBase(program: Command): void {
       const baseFile = parseResult.base!;
 
       // Open collection
-      const openResult = Collection.open(cwd);
+      const openResult = await Collection.open(cwd);
       if (openResult.error) {
         if (opts.format === "json") {
           console.log(JSON.stringify({ error: openResult.error }, null, 2));
@@ -55,7 +56,7 @@ export function registerBase(program: Command): void {
 
       // Execute
       try {
-        const results = executeBase(baseFile, collection, {
+        const results = await executeBase(baseFile, collection, {
           viewName: opts.view,
           fields: opts.fields,
           limit: opts.limit,
@@ -251,25 +252,7 @@ export function registerBase(program: Command): void {
 /**
  * Print a human-readable inspection of a .base file.
  */
-function printInspectText(
-  baseFile: {
-    filters?: unknown;
-    formulas?: Record<string, string>;
-    properties?: Record<string, { displayName?: string; [k: string]: unknown }>;
-    summaries?: Record<string, string>;
-    views?: Array<{
-      type: string;
-      name?: string;
-      limit?: number;
-      filters?: unknown;
-      groupBy?: { property: string; direction?: string };
-      order?: string[];
-      summaries?: Record<string, string>;
-      [k: string]: unknown;
-    }>;
-  },
-  file: string,
-): void {
+function printInspectText(baseFile: BaseFile, file: string): void {
   console.log(chalk.bold(file));
   console.log();
 
