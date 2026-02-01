@@ -69,7 +69,7 @@ describe("base run", () => {
       const parsed = JSON.parse(stdout);
       expect(parsed.view.type).toBe("table");
       expect(parsed.view.name).toBe("All Notes");
-      expect(parsed.results.length).toBe(5);
+      expect(parsed.results.length).toBe(7);
       expect(parsed.columns).toContain("file.name");
       expect(parsed.columns).toContain("title");
     });
@@ -94,7 +94,7 @@ describe("base run", () => {
       const lines = stdout.trim().split("\n");
       expect(lines[0]).toContain("path");
       expect(lines[0]).toContain("title");
-      expect(lines.length).toBe(6); // header + 5 rows
+      expect(lines.length).toBe(8); // header + 7 rows
     });
 
     it("runs a .base file with paths output", () => {
@@ -106,7 +106,7 @@ describe("base run", () => {
       const paths = stdout.trim().split("\n");
       expect(paths).toContain("hello.md");
       expect(paths).toContain("project-alpha.md");
-      expect(paths.length).toBe(5);
+      expect(paths.length).toBe(7);
     });
 
     it("runs a .base file with JSONL output", () => {
@@ -116,7 +116,7 @@ describe("base run", () => {
       );
       expect(exitCode).toBe(0);
       const lines = stdout.trim().split("\n");
-      expect(lines.length).toBe(5);
+      expect(lines.length).toBe(7);
       const first = JSON.parse(lines[0]);
       expect(first).toHaveProperty("path");
       expect(first).toHaveProperty("title");
@@ -258,7 +258,7 @@ describe("base run", () => {
       const parsed = JSON.parse(stdout);
       expect(parsed.results.length).toBe(2);
       expect(parsed.meta.has_more).toBe(true);
-      expect(parsed.meta.total_count).toBe(5);
+      expect(parsed.meta.total_count).toBe(7);
     });
 
     it("overrides fields with --fields", () => {

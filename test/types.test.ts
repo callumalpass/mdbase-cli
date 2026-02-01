@@ -43,7 +43,7 @@ describe("types list command", () => {
       const { stdout, exitCode } = run(["types", "list"], VALID);
       expect(exitCode).toBe(0);
       expect(stdout).toContain("note");
-      expect(stdout).toContain("3 fields");
+      expect(stdout).toContain("4 fields");
     });
   });
 
@@ -57,7 +57,7 @@ describe("types list command", () => {
       const note = parsed.find((t: { name: string }) => t.name === "note");
       expect(note).toBeDefined();
       expect(note.name).toBe("note");
-      expect(note.fields).toBe(3);
+      expect(note.fields).toBe(4);
     });
   });
 
@@ -66,7 +66,7 @@ describe("types list command", () => {
       const { stdout, exitCode } = run(["types", "list", "--format", "yaml"], VALID);
       expect(exitCode).toBe(0);
       expect(stdout).toContain("name: note");
-      expect(stdout).toContain("fields: 3");
+      expect(stdout).toContain("fields: 4");
     });
   });
 

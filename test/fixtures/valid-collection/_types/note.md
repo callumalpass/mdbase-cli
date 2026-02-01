@@ -12,4 +12,6 @@ fields:
     type: integer
     min: 1
     max: 5
+  related:
+    type: link
 ---

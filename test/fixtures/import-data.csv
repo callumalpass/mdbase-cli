@@ -1,0 +1,4 @@
+path,title,rating,tags
+import-1.md,First Import,3,"alpha"
+import-2.md,Second Import,4,"beta"
+import-3.md,Third Import,5,"gamma"

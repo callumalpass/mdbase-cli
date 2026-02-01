@@ -1,0 +1,5 @@
+[
+  { "path": "import-1.md", "title": "First Import", "rating": 3, "tags": ["alpha"] },
+  { "path": "import-2.md", "title": "Second Import", "rating": 4, "tags": ["beta"] },
+  { "path": "import-3.md", "title": "Third Import", "rating": 5, "tags": ["gamma"] }
+]
