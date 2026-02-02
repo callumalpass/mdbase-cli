@@ -131,7 +131,7 @@ describe("query command", () => {
 
     it("outputs CSV with header", () => {
       const { stdout, exitCode } = run(
-        ["query", "--types", "note", "--fields", "title", "rating", "--format", "csv"],
+        ["query", "--types", "note", "--fields", "title,rating", "--format", "csv"],
         VALID,
       );
       expect(exitCode).toBe(0);
@@ -158,7 +158,7 @@ describe("query command", () => {
 
     it("outputs table format by default", () => {
       const { stdout, exitCode } = run(
-        ["query", "--types", "note", "--fields", "title", "rating"],
+        ["query", "--types", "note", "--fields", "title,rating"],
         VALID,
       );
       expect(exitCode).toBe(0);
@@ -186,7 +186,7 @@ describe("query command", () => {
   describe("formulas", () => {
     it("computes and displays formulas", () => {
       const { stdout, exitCode } = run(
-        ["query", "--types", "note", "--formula", "tagCount=len(tags)", "--fields", "title", "tagCount", "--format", "json"],
+        ["query", "--types", "note", "--formula", "tagCount=len(tags)", "--fields", "title,tagCount", "--format", "json"],
         VALID,
       );
       expect(exitCode).toBe(0);

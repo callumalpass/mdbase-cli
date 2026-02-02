@@ -34,19 +34,30 @@ function pickFields(
   return result;
 }
 
+function splitCsv(value: string | undefined): string[] | undefined {
+  if (value === undefined) return undefined;
+  const parts = value.split(",").map((s) => s.trim()).filter((s) => s.length > 0);
+  if (parts.length === 0) return undefined;
+  return parts;
+}
+
+function collect(value: string, previous: string[]): string[] {
+  return previous.concat([value]);
+}
+
 export function registerQuery(program: Command): void {
   program
     .command("query [expression]")
     .description("Query files using mdbase expression syntax")
-    .option("-t, --types <types...>", "Filter by type names")
+    .option("-t, --types <types>", "Filter by type names (comma-separated)")
     .option("-f, --folder <folder>", "Restrict to folder")
-    .option("--order-by <specs...>", "Sort by field (prefix with - for desc, e.g. -rating)")
+    .option("--order-by <specs>", "Sort specs (comma-separated, - prefix for desc)")
     .option("--limit <n>", "Limit results", parseInt)
     .option("--offset <n>", "Skip results", parseInt)
     .option("--body", "Include body in output")
     .option("--format <format>", "Output format: table, json, jsonl, csv, paths", "table")
-    .option("--fields <fields...>", "Fields to include in output")
-    .option("--formula <formulas...>", "Computed formulas (name=expr)")
+    .option("--fields <fields>", "Fields to include (comma-separated)")
+    .option("--formula <expr>", "Computed formula as name=expr (repeatable)", collect, [])
     .option("--count", "Only show result count")
     .action(async (expression: string | undefined, opts) => {
       const cwd = process.cwd();
@@ -62,10 +73,15 @@ export function registerQuery(program: Command): void {
       }
       const collection = openResult.collection!;
 
+      // Parse comma-separated options
+      const types = splitCsv(opts.types);
+      const fields = splitCsv(opts.fields);
+
       // Build order_by from --order-by specs like "title" or "-rating"
       let orderBy: Array<{ field: string; direction?: string }> | undefined;
-      if (opts.orderBy) {
-        orderBy = (opts.orderBy as string[]).map((spec) => {
+      const orderBySpecs = splitCsv(opts.orderBy);
+      if (orderBySpecs) {
+        orderBy = orderBySpecs.map((spec) => {
           if (spec.startsWith("-")) {
             return { field: spec.slice(1), direction: "desc" };
           }
@@ -73,9 +89,9 @@ export function registerQuery(program: Command): void {
         });
       }
 
-      // Parse --formula name=expr pairs
+      // Parse --formula name=expr pairs (now always an array from collector)
       let formulas: Record<string, string> | undefined;
-      if (opts.formula) {
+      if (opts.formula && opts.formula.length > 0) {
         formulas = {};
         for (const f of opts.formula as string[]) {
           const eqIdx = f.indexOf("=");
@@ -88,7 +104,7 @@ export function registerQuery(program: Command): void {
       }
 
       const queryResult = await collection.query({
-        types: opts.types,
+        types,
         where: expression,
         order_by: orderBy,
         folder: opts.folder,
@@ -140,8 +156,8 @@ export function registerQuery(program: Command): void {
           allFields.add(key);
         }
       }
-      const fields = opts.fields
-        ? (opts.fields as string[])
+      const displayFields = fields
+        ? fields
         : [...Array.from(allFields).filter((f) => f !== "type"), ...formulaNames];
 
       switch (opts.format) {
@@ -157,7 +173,7 @@ export function registerQuery(program: Command): void {
             results: results.map((r) => ({
               path: r.path,
               types: r.types,
-              frontmatter: opts.fields ? pickFields(r, fields) : { ...r.frontmatter, ...r.formulas },
+              frontmatter: fields ? pickFields(r, displayFields) : { ...r.frontmatter, ...r.formulas },
               ...(opts.body && r.body != null ? { body: r.body } : {}),
             })),
             meta: queryResult.meta,
@@ -171,7 +187,7 @@ export function registerQuery(program: Command): void {
             const row = {
               path: r.path,
               types: r.types,
-              frontmatter: opts.fields ? pickFields(r, fields) : { ...r.frontmatter, ...r.formulas },
+              frontmatter: fields ? pickFields(r, displayFields) : { ...r.frontmatter, ...r.formulas },
               ...(opts.body && r.body != null ? { body: r.body } : {}),
             };
             console.log(JSON.stringify(row));
@@ -180,10 +196,10 @@ export function registerQuery(program: Command): void {
         }
 
         case "csv": {
-          const header = ["path", ...fields];
+          const header = ["path", ...displayFields];
           console.log(header.map(csvEscape).join(","));
           for (const r of results) {
-            const row = [r.path, ...fields.map((f) => formatValue(getField(r, f)))];
+            const row = [r.path, ...displayFields.map((f) => formatValue(getField(r, f)))];
             console.log(row.map(csvEscape).join(","));
           }
           break;
@@ -192,14 +208,14 @@ export function registerQuery(program: Command): void {
         case "table":
         default: {
           const table = new Table({
-            head: [chalk.bold("path"), ...fields.map((f) => chalk.bold(f))],
+            head: [chalk.bold("path"), ...displayFields.map((f) => chalk.bold(f))],
             style: { head: [], border: [] },
           });
 
           for (const r of results) {
             table.push([
               r.path,
-              ...fields.map((f) => formatValue(getField(r, f))),
+              ...displayFields.map((f) => formatValue(getField(r, f))),
             ]);
           }
 
