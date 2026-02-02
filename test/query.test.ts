@@ -243,4 +243,142 @@ describe("query command", () => {
       expect(parsed.results).toEqual([]);
     });
   });
+
+  describe("variadic option bug fix", () => {
+    it("does not absorb expression into --types", () => {
+      // Regression test: expression was being consumed by variadic --types
+      const { stdout, exitCode } = run(
+        ["query", "--types", "note", "rating >= 4", "--count"],
+        VALID,
+      );
+      expect(exitCode).toBe(0);
+      // Should be 2 (notes with rating >= 4), not all notes
+      expect(stdout.trim()).toBe("2");
+    });
+
+    it("combines --types with expression when expression comes first", () => {
+      const { stdout, exitCode } = run(
+        ["query", "rating >= 4", "--types", "note", "--format", "json"],
+        VALID,
+      );
+      expect(exitCode).toBe(0);
+      const parsed = JSON.parse(stdout);
+      expect(parsed.results.length).toBe(2);
+      for (const r of parsed.results) {
+        expect(r.types).toContain("note");
+        expect(r.frontmatter.rating).toBeGreaterThanOrEqual(4);
+      }
+    });
+
+    it("combines --types with expression when --types comes first", () => {
+      const { stdout, exitCode } = run(
+        ["query", "--types", "note", "rating >= 4", "--format", "json"],
+        VALID,
+      );
+      expect(exitCode).toBe(0);
+      const parsed = JSON.parse(stdout);
+      expect(parsed.results.length).toBe(2);
+      for (const r of parsed.results) {
+        expect(r.types).toContain("note");
+        expect(r.frontmatter.rating).toBeGreaterThanOrEqual(4);
+      }
+    });
+  });
+
+  describe("comma-separated options", () => {
+    it("parses comma-separated --types", () => {
+      const { stdout, exitCode } = run(
+        ["query", "--types", "note,project", "--format", "json"],
+        VALID,
+      );
+      expect(exitCode).toBe(0);
+      const parsed = JSON.parse(stdout);
+      expect(parsed.results.length).toBeGreaterThan(0);
+      for (const r of parsed.results) {
+        expect(r.types.some((t: string) => t === "note" || t === "project")).toBe(true);
+      }
+    });
+
+    it("parses comma-separated --fields", () => {
+      const { stdout, exitCode } = run(
+        ["query", "--types", "note", "--fields", "title,rating", "--format", "json"],
+        VALID,
+      );
+      expect(exitCode).toBe(0);
+      const parsed = JSON.parse(stdout);
+      for (const r of parsed.results) {
+        expect(Object.keys(r.frontmatter).sort()).toEqual(["rating", "title"]);
+      }
+    });
+
+    it("parses comma-separated --order-by", () => {
+      const { stdout, exitCode } = run(
+        ["query", "--types", "note", "--order-by", "-rating,title", "--format", "json"],
+        VALID,
+      );
+      expect(exitCode).toBe(0);
+      const parsed = JSON.parse(stdout);
+      // Results should be sorted by rating desc first
+      const ratings = parsed.results.map((r: { frontmatter: { rating: number } }) => r.frontmatter.rating);
+      for (let i = 1; i < ratings.length; i++) {
+        expect(ratings[i]).toBeLessThanOrEqual(ratings[i - 1]);
+      }
+    });
+
+    it("trims whitespace in comma-separated values", () => {
+      const { stdout, exitCode } = run(
+        ["query", "--types", " note , project ", "--format", "json"],
+        VALID,
+      );
+      expect(exitCode).toBe(0);
+      const parsed = JSON.parse(stdout);
+      expect(parsed.results.length).toBeGreaterThan(0);
+    });
+
+    it("filters empty segments in comma-separated values", () => {
+      const { stdout, exitCode } = run(
+        ["query", "--types", "note,,", "--format", "json"],
+        VALID,
+      );
+      expect(exitCode).toBe(0);
+      const parsed = JSON.parse(stdout);
+      for (const r of parsed.results) {
+        expect(r.types).toContain("note");
+      }
+    });
+  });
+
+  describe("repeatable --formula", () => {
+    it("accepts multiple --formula flags", () => {
+      const { stdout, exitCode } = run(
+        [
+          "query", "--types", "note",
+          "--formula", "tagCount=len(tags)",
+          "--formula", "doubled=rating * 2",
+          "--fields", "title,tagCount,doubled",
+          "--format", "json",
+        ],
+        VALID,
+      );
+      expect(exitCode).toBe(0);
+      const parsed = JSON.parse(stdout);
+      for (const r of parsed.results) {
+        expect(r.frontmatter).toHaveProperty("tagCount");
+        expect(r.frontmatter).toHaveProperty("doubled");
+      }
+    });
+
+    it("handles formula expressions containing commas", () => {
+      // This verifies --formula uses repeatable flag, not comma-separation
+      const { stdout, exitCode } = run(
+        ["query", "--types", "note", "--formula", "highRating=if(rating > 3, 'high', 'low')", "--format", "json"],
+        VALID,
+      );
+      expect(exitCode).toBe(0);
+      const parsed = JSON.parse(stdout);
+      for (const r of parsed.results) {
+        expect(r.frontmatter).toHaveProperty("highRating");
+      }
+    });
+  });
 });
