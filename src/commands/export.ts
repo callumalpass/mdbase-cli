@@ -10,15 +10,22 @@ function formatValue(value: unknown): string {
   return String(value);
 }
 
+function splitCsv(value: string | undefined): string[] | undefined {
+  if (value === undefined) return undefined;
+  const parts = value.split(",").map((s) => s.trim()).filter((s) => s.length > 0);
+  if (parts.length === 0) return undefined;
+  return parts;
+}
+
 export function registerExport(program: Command): void {
   program
     .command("export")
     .description("Export collection data to various formats")
-    .option("-t, --types <types...>", "Filter by type names")
+    .option("-t, --types <types>", "Filter by type names (comma-separated)")
     .option("-w, --where <expression>", "Filter expression")
     .option("--format <format>", "Output format: json, csv", "json")
     .option("-o, --output <file>", "Output file (default: stdout)")
-    .option("--fields <fields...>", "Fields to include")
+    .option("--fields <fields>", "Fields to include (comma-separated)")
     .action(async (opts) => {
       if (opts.format === "sqlite") {
         console.error(chalk.red("error: sqlite format is not supported (better-sqlite3 is not a dependency)"));
@@ -38,8 +45,12 @@ export function registerExport(program: Command): void {
       }
       const collection = openResult.collection!;
 
+      // Parse comma-separated options
+      const types = splitCsv(opts.types);
+      const fieldsFilter = splitCsv(opts.fields);
+
       const queryResult = await collection.query({
-        types: opts.types,
+        types,
         where: opts.where,
       });
 
@@ -60,8 +71,8 @@ export function registerExport(program: Command): void {
 
       // Determine fields
       let fields: string[];
-      if (opts.fields) {
-        fields = opts.fields as string[];
+      if (fieldsFilter) {
+        fields = fieldsFilter;
       } else {
         const allFields = new Set<string>();
         for (const r of results) {
