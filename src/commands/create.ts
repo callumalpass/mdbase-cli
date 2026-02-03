@@ -4,27 +4,7 @@ import chalk from "chalk";
 import { Collection } from "mdbase";
 import type { MdbaseError } from "mdbase";
 import yaml from "js-yaml";
-
-function parseFieldValue(raw: string): unknown {
-  // Boolean
-  if (raw === "true") return true;
-  if (raw === "false") return false;
-
-  // Null
-  if (raw === "null") return null;
-
-  // Number (integer or float)
-  if (/^-?\d+$/.test(raw)) return parseInt(raw, 10);
-  if (/^-?\d+\.\d+$/.test(raw)) return parseFloat(raw);
-
-  // List (comma-separated in brackets)
-  if (raw.startsWith("[") && raw.endsWith("]")) {
-    return raw.slice(1, -1).split(",").map((s) => s.trim());
-  }
-
-  // String (default)
-  return raw;
-}
+import { parseFieldValue } from "../utils.js";
 
 function parseFields(fieldArgs: string[]): Record<string, unknown> {
   const frontmatter: Record<string, unknown> = {};
