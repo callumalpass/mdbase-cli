@@ -27,8 +27,12 @@ function formatFieldConstraints(field: FieldDefinition): string[] {
   if (field.generated) {
     if (typeof field.generated === "string") {
       parts.push(`generated: ${field.generated}`);
-    } else {
+    } else if ("from" in field.generated) {
       parts.push(`generated: ${field.generated.from} → ${field.generated.transform}`);
+    } else if ("random" in field.generated) {
+      parts.push(`generated: random(${field.generated.random})`);
+    } else if ("sequence" in field.generated) {
+      parts.push(`generated: sequence`);
     }
   }
   if (field.computed) parts.push(`computed: ${field.computed}`);
