@@ -112,6 +112,34 @@ describe("export command", () => {
     });
   });
 
+  describe("comma-separated options", () => {
+    it("parses comma-separated --types", () => {
+      const { stdout, exitCode } = run(
+        ["export", "--types", "note,project", "--format", "json"],
+        VALID,
+      );
+      expect(exitCode).toBe(0);
+      const parsed = JSON.parse(stdout);
+      expect(parsed.length).toBeGreaterThan(0);
+      for (const r of parsed) {
+        expect(r.types.some((t: string) => t === "note" || t === "project")).toBe(true);
+      }
+    });
+
+    it("parses comma-separated --fields", () => {
+      const { stdout, exitCode } = run(
+        ["export", "--fields", "title,rating", "--format", "json"],
+        VALID,
+      );
+      expect(exitCode).toBe(0);
+      const parsed = JSON.parse(stdout);
+      for (const r of parsed) {
+        const keys = Object.keys(r.frontmatter);
+        expect(keys.every((k) => k === "title" || k === "rating")).toBe(true);
+      }
+    });
+  });
+
   describe("error handling", () => {
     it("exits 3 when no collection found", () => {
       const { exitCode } = run(["export"], "/tmp");
