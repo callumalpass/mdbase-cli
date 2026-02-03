@@ -2,6 +2,7 @@ import { Command } from "commander";
 import path from "node:path";
 import chalk from "chalk";
 import { Collection } from "mdbase";
+import type { MdbaseError } from "mdbase";
 import yaml from "js-yaml";
 
 function parseFieldValue(raw: string): unknown {
@@ -48,14 +49,14 @@ function formatValue(value: unknown): string {
 
 export function registerCreate(program: Command): void {
   program
-    .command("create <path>")
+    .command("create [path]")
     .description("Create a new file with typed frontmatter")
     .option("-t, --type <type>", "Type for the new file")
     .option("-f, --field <fields...>", "Field values as key=value pairs")
     .option("--body <body>", "Body content")
     .option("--body-stdin", "Read body from stdin")
     .option("--format <format>", "Output format: text, json, yaml", "text")
-    .action(async (filePath: string, opts) => {
+    .action(async (filePath: string | undefined, opts) => {
       const cwd = process.cwd();
 
       // Open the collection
@@ -83,7 +84,7 @@ export function registerCreate(program: Command): void {
         body = Buffer.concat(chunks).toString("utf-8");
       }
 
-      const relativePath = path.relative(cwd, path.resolve(cwd, filePath));
+      const relativePath = filePath ? path.relative(cwd, path.resolve(cwd, filePath)) : undefined;
 
       // Build create input
       const input: {
@@ -109,9 +110,22 @@ export function registerCreate(program: Command): void {
     });
 }
 
+function formatIssue(issue: MdbaseError): string {
+  const severity = issue.severity ?? "error";
+  const tag =
+    severity === "error"
+      ? chalk.red("error")
+      : severity === "warning"
+        ? chalk.yellow("warn")
+        : chalk.blue("info");
+
+  const field = issue.field ? ` field ${chalk.bold(issue.field)}` : "";
+  return `  ${tag}${field}: ${issue.message} ${chalk.dim(`[${issue.code}]`)}`;
+}
+
 function outputResult(
-  result: { valid?: boolean; frontmatter?: Record<string, unknown>; body?: string; path?: string; error?: { code: string; message: string } },
-  requestedPath: string,
+  result: { valid?: boolean; frontmatter?: Record<string, unknown>; body?: string; path?: string; error?: { code: string; message: string }; issues?: MdbaseError[] },
+  requestedPath: string | undefined,
   opts: { format: string },
 ): void {
   if (result.error) {
@@ -122,9 +136,18 @@ function outputResult(
       : 1;
 
     if (opts.format === "json") {
-      console.log(JSON.stringify({ error: result.error }, null, 2));
+      const output: Record<string, unknown> = { error: result.error };
+      if (result.issues) {
+        output.issues = result.issues;
+      }
+      console.log(JSON.stringify(output, null, 2));
     } else {
       console.error(chalk.red(`error: ${result.error.message}`));
+      if (result.issues) {
+        for (const issue of result.issues) {
+          console.error(formatIssue(issue));
+        }
+      }
     }
     process.exit(exitCode);
   }

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
+import { createRequire } from "node:module";
 import { registerValidate } from "./commands/validate.js";
 import { registerQuery } from "./commands/query.js";
 import { registerRead } from "./commands/read.js";
@@ -22,11 +23,13 @@ import { registerDiff } from "./commands/diff.js";
 import { registerSchema } from "./commands/schema.js";
 
 const program = new Command();
+const require = createRequire(import.meta.url);
+const pkg = require("../package.json") as { version?: string };
 
 program
   .name("mdbase")
   .description("CLI tool for mdbase collections")
-  .version("0.1.0");
+  .version(pkg.version ?? "0.0.0");
 
 // Core spec commands
 registerValidate(program);

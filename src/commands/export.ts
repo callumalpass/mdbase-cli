@@ -3,18 +3,12 @@ import fs from "node:fs";
 import chalk from "chalk";
 import { Collection } from "mdbase";
 import { stringify } from "csv-stringify/sync";
+import { splitList } from "../utils.js";
 
 function formatValue(value: unknown): string {
   if (value === null || value === undefined) return "";
   if (Array.isArray(value)) return value.map(String).join(", ");
   return String(value);
-}
-
-function splitCsv(value: string | undefined): string[] | undefined {
-  if (value === undefined) return undefined;
-  const parts = value.split(",").map((s) => s.trim()).filter((s) => s.length > 0);
-  if (parts.length === 0) return undefined;
-  return parts;
 }
 
 export function registerExport(program: Command): void {
@@ -46,8 +40,8 @@ export function registerExport(program: Command): void {
       const collection = openResult.collection!;
 
       // Parse comma-separated options
-      const types = splitCsv(opts.types);
-      const fieldsFilter = splitCsv(opts.fields);
+      const types = splitList(opts.types);
+      const fieldsFilter = splitList(opts.fields);
 
       const queryResult = await collection.query({
         types,

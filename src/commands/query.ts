@@ -2,6 +2,7 @@ import { Command } from "commander";
 import chalk from "chalk";
 import { Collection } from "mdbase";
 import Table from "cli-table3";
+import { splitList } from "../utils.js";
 
 interface ResultRow {
   path: string;
@@ -34,13 +35,6 @@ function pickFields(
   return result;
 }
 
-function splitCsv(value: string | undefined): string[] | undefined {
-  if (value === undefined) return undefined;
-  const parts = value.split(",").map((s) => s.trim()).filter((s) => s.length > 0);
-  if (parts.length === 0) return undefined;
-  return parts;
-}
-
 function collect(value: string, previous: string[]): string[] {
   return previous.concat([value]);
 }
@@ -52,6 +46,7 @@ export function registerQuery(program: Command): void {
     .option("-t, --types <types>", "Filter by type names (comma-separated)")
     .option("-f, --folder <folder>", "Restrict to folder")
     .option("--order-by <specs>", "Sort specs (comma-separated, - prefix for desc)")
+    .option("--sort <specs>", "Alias for --order-by")
     .option("--limit <n>", "Limit results", parseInt)
     .option("--offset <n>", "Skip results", parseInt)
     .option("--body", "Include body in output")
@@ -74,13 +69,16 @@ export function registerQuery(program: Command): void {
       const collection = openResult.collection!;
 
       // Parse comma-separated options
-      const types = splitCsv(opts.types);
-      const fields = splitCsv(opts.fields);
+      const types = splitList(opts.types);
+      const fields = splitList(opts.fields);
 
       // Build order_by from --order-by specs like "title" or "-rating"
       let orderBy: Array<{ field: string; direction?: string }> | undefined;
-      const orderBySpecs = splitCsv(opts.orderBy);
-      if (orderBySpecs) {
+      const orderBySpecs = [
+        ...(splitList(opts.orderBy) ?? []),
+        ...(splitList(opts.sort) ?? []),
+      ];
+      if (orderBySpecs.length > 0) {
         orderBy = orderBySpecs.map((spec) => {
           if (spec.startsWith("-")) {
             return { field: spec.slice(1), direction: "desc" };
@@ -93,7 +91,7 @@ export function registerQuery(program: Command): void {
       let formulas: Record<string, string> | undefined;
       if (opts.formula && opts.formula.length > 0) {
         formulas = {};
-        for (const f of opts.formula as string[]) {
+        for (const f of opts.formula) {
           const eqIdx = f.indexOf("=");
           if (eqIdx === -1) {
             console.error(chalk.red(`error: invalid formula format: ${f} (expected name=expression)`));

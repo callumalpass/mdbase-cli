@@ -70,7 +70,7 @@ mdbase validate .
 Query documents of a given type:
 
 ```sh
-mdbase query . --type note --where "status = published" --sort created --limit 10
+mdbase query "status = published" --types note --sort created --limit 10
 ```
 
 Execute an Obsidian `.base` file:
