@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import fs from "node:fs";
 import chalk from "chalk";
-import { Collection } from "mdbase";
+import { Collection } from "@callumalpass/mdbase";
 import { stringify } from "csv-stringify/sync";
 import { splitList } from "../utils.js";
 

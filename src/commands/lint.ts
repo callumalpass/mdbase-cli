@@ -1,8 +1,8 @@
 import { Command } from "commander";
 import path from "node:path";
 import chalk from "chalk";
-import { Collection } from "mdbase";
-import type { MdbaseError } from "mdbase";
+import { Collection } from "@callumalpass/mdbase";
+import type { MdbaseError } from "@callumalpass/mdbase";
 import yaml from "js-yaml";
 
 interface LintIssue {

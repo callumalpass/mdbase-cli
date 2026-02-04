@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import chalk from "chalk";
-import { Collection } from "mdbase";
+import { Collection } from "@callumalpass/mdbase";
 import { watch as chokidarWatch } from "chokidar";
 
 function timestamp(): string {

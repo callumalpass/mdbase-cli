@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import chalk from "chalk";
-import { Collection } from "mdbase";
+import { Collection } from "@callumalpass/mdbase";
 
 interface StatsResult {
   total_files: number;

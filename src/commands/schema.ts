@@ -2,7 +2,7 @@ import { Command } from "commander";
 import fs from "node:fs";
 import path from "node:path";
 import chalk from "chalk";
-import { Collection, loadConfig } from "mdbase";
+import { Collection, loadConfig } from "@callumalpass/mdbase";
 import yaml from "js-yaml";
 
 interface InferredField {

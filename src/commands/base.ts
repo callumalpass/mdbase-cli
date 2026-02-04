@@ -2,7 +2,7 @@ import * as path from "node:path";
 import { Command } from "commander";
 import chalk from "chalk";
 import * as yaml from "js-yaml";
-import { Collection } from "mdbase";
+import { Collection } from "@callumalpass/mdbase";
 import { parseBaseFilePath } from "../base/parser.js";
 import type { BaseFile } from "../base/parser.js";
 import { executeBase, BaseExecutionError } from "../base/executor.js";

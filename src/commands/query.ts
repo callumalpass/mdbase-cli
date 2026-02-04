@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import chalk from "chalk";
-import { Collection } from "mdbase";
+import { Collection } from "@callumalpass/mdbase";
 import Table from "cli-table3";
 import { splitList } from "../utils.js";
 
