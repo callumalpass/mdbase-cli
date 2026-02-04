@@ -36,13 +36,18 @@ afterEach(() => {
 });
 
 describe("init command", () => {
-  it("creates mdbase.yaml and _types/ folder", () => {
+  it("creates mdbase.yaml, _types/ folder, and meta type", () => {
     const dir = makeTempDir();
     const { stdout, exitCode } = run(["init"], dir);
     expect(exitCode).toBe(0);
     expect(stdout).toContain("initialized");
     expect(fs.existsSync(path.join(dir, "mdbase.yaml"))).toBe(true);
     expect(fs.existsSync(path.join(dir, "_types"))).toBe(true);
+    expect(fs.existsSync(path.join(dir, "_types", "meta.md"))).toBe(true);
+
+    const metaContent = fs.readFileSync(path.join(dir, "_types", "meta.md"), "utf-8");
+    expect(metaContent).toContain("name: meta");
+    expect(metaContent).toContain('path_glob: "_types/**/*.md"');
   });
 
   it("--name sets collection name", () => {
@@ -64,12 +69,14 @@ describe("init command", () => {
     expect(content).toContain("title:");
   });
 
-  it("--no-types-folder skips _types directory", () => {
+  it("--types-folder uses custom types folder with adjusted meta type", () => {
     const dir = makeTempDir();
-    const { exitCode } = run(["init", "--no-types-folder"], dir);
+    const { exitCode } = run(["init", "--types-folder", "schemas"], dir);
     expect(exitCode).toBe(0);
-    expect(fs.existsSync(path.join(dir, "mdbase.yaml"))).toBe(true);
-    expect(fs.existsSync(path.join(dir, "_types"))).toBe(false);
+    expect(fs.existsSync(path.join(dir, "schemas", "meta.md"))).toBe(true);
+
+    const metaContent = fs.readFileSync(path.join(dir, "schemas", "meta.md"), "utf-8");
+    expect(metaContent).toContain('path_glob: "schemas/**/*.md"');
   });
 
   it("--format json outputs structured JSON", () => {
@@ -104,5 +111,6 @@ describe("init command", () => {
     const { exitCode } = run(["init", subdir], dir);
     expect(exitCode).toBe(0);
     expect(fs.existsSync(path.join(subdir, "mdbase.yaml"))).toBe(true);
+    expect(fs.existsSync(path.join(subdir, "_types", "meta.md"))).toBe(true);
   });
 });

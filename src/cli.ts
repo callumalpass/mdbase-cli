@@ -32,6 +32,7 @@ program
   .version(pkg.version ?? "0.0.0");
 
 // Core spec commands
+registerInit(program);
 registerValidate(program);
 registerQuery(program);
 registerRead(program);
@@ -45,7 +46,6 @@ registerTypes(program);
 registerBase(program);
 
 // Beyond-spec commands
-registerInit(program);
 registerLint(program);
 registerFmt(program);
 registerExport(program);
