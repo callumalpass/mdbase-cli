@@ -85,6 +85,12 @@ Export to CSV:
 mdbase export . --type note --format csv -o notes.csv
 ```
 
+## Example applications
+
+| Project | Description |
+|---------|-------------|
+| [mdbase-workouts](https://github.com/callumalpass/mdbase-workouts) | Workout tracker with chat interface, built on mdbase |
+
 ## Spec
 
 mdbase-cli implements the [mdbase specification](https://github.com/callumalpass/mdbase-spec).
