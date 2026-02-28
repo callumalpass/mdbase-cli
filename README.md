@@ -25,6 +25,10 @@ node dist/cli.js
 mdbase <command> [options]
 ```
 
+Global option:
+
+- `-C, --collection <alias>` Run a command against a registered collection alias (from `mdbase collections add`).
+
 ### Core commands
 
 | Command    | Description                                      |
@@ -58,6 +62,20 @@ mdbase <command> [options]
 | `watch`    | Watch for file changes and re-validate           |
 | `diff`     | Show differences between document versions       |
 | `schema`   | Generate or inspect type schemas                 |
+| `collections` | Manage named collection registry entries      |
+
+### Fuzzy picker
+
+`mdbase-fzf` provides an interactive two-step picker powered by `fzf`:
+
+1. Choose a type (includes `untype` for files without a type).
+2. Browse matching files with key fields (display/title-style fields are prioritized), preview, then open in your editor.
+
+Requirements: `fzf` and `jq` on `PATH`.
+
+```sh
+mdbase-fzf
+```
 
 ## Examples
 
@@ -83,6 +101,18 @@ Export to CSV:
 
 ```sh
 mdbase export . --type note --format csv -o notes.csv
+```
+
+Initialize and register a collection alias:
+
+```sh
+mdbase init --register work
+```
+
+List markdown files from all registered collections:
+
+```sh
+mdbase collections files --format paths
 ```
 
 ## Example applications

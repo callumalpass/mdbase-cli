@@ -4,6 +4,23 @@ import path from "node:path";
 import chalk from "chalk";
 import yaml from "js-yaml";
 import { Collection } from "@callumalpass/mdbase";
+import { addCollection, RegistryError } from "../collections/registry.js";
+
+type InitOutput = {
+  root: string;
+  files: string[];
+  name?: string;
+  registered?: {
+    alias: string;
+    path: string;
+  };
+};
+
+function registryExitCode(code: string): number {
+  if (code === "path_not_found") return 4;
+  if (code === "missing_config" || code === "invalid_config") return 3;
+  return 1;
+}
 
 export function registerInit(program: Command): void {
   program
@@ -14,6 +31,7 @@ export function registerInit(program: Command): void {
     .option("--spec-version <version>", "Spec version", "0.2.0")
     .option("--types-folder <folder>", "Types folder name", "_types")
     .option("--example-type <name>", "Create an example type definition")
+    .option("--register [alias]", "Register collection in global registry (optional alias)")
     .option("--format <format>", "Output format: text, json, yaml", "text")
     .action(async (directory: string | undefined, opts) => {
       const targetDir = directory
@@ -97,11 +115,34 @@ export function registerInit(program: Command): void {
       }
 
       // Output result
-      const result: { root: string; files: string[]; name?: string } = {
+      const result: InitOutput = {
         root: targetDir,
         files: createdFiles,
       };
       if (opts.name) result.name = opts.name;
+
+      // Optional: register initialized collection in global registry.
+      if (opts.register !== undefined) {
+        const alias = typeof opts.register === "string" && opts.register.trim().length > 0
+          ? opts.register
+          : (path.basename(targetDir) || "collection");
+        try {
+          const registered = await addCollection(alias, targetDir);
+          result.registered = { alias: registered.alias, path: registered.path };
+        } catch (err) {
+          const code = err instanceof RegistryError ? err.code : "register_failed";
+          const message = err instanceof Error ? err.message : String(err);
+          if (opts.format === "json") {
+            console.log(JSON.stringify({ error: { code, message }, initialized: result }, null, 2));
+          } else if (opts.format === "yaml") {
+            console.log(yaml.dump({ error: { code, message }, initialized: result }, { lineWidth: -1, noRefs: true }).trimEnd());
+          } else {
+            console.error(chalk.red(`error: ${message}`));
+            console.error(chalk.yellow("note: collection was initialized but not registered"));
+          }
+          process.exit(registryExitCode(code));
+        }
+      }
 
       switch (opts.format) {
         case "json": {
@@ -119,6 +160,9 @@ export function registerInit(program: Command): void {
           console.log(`${chalk.green("initialized")} ${chalk.bold(targetDir)}`);
           for (const f of createdFiles) {
             console.log(`  ${chalk.dim("+")} ${f}`);
+          }
+          if (result.registered) {
+            console.log(`${chalk.green("registered")} ${chalk.bold(result.registered.alias)} -> ${result.registered.path}`);
           }
           break;
         }

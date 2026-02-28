@@ -6,12 +6,16 @@ import os from "node:os";
 
 const CLI = path.resolve(__dirname, "../src/cli.ts");
 
-function run(args: string[], cwd: string): { stdout: string; stderr: string; exitCode: number } {
+function run(
+  args: string[],
+  cwd: string,
+  extraEnv: Record<string, string> = {},
+): { stdout: string; stderr: string; exitCode: number } {
   try {
     const stdout = execFileSync("npx", ["tsx", CLI, ...args], {
       cwd,
       encoding: "utf-8",
-      env: { ...process.env, NO_COLOR: "1" },
+      env: { ...process.env, NO_COLOR: "1", ...extraEnv },
     });
     return { stdout, stderr: "", exitCode: 0 };
   } catch (err: unknown) {
@@ -112,5 +116,37 @@ describe("init command", () => {
     expect(exitCode).toBe(0);
     expect(fs.existsSync(path.join(subdir, "mdbase.yaml"))).toBe(true);
     expect(fs.existsSync(path.join(subdir, "_types", "meta.md"))).toBe(true);
+  });
+
+  it("--register with explicit alias registers collection", () => {
+    const dir = makeTempDir();
+    const registryPath = path.join(dir, "state", "collections.json");
+    const env = { MDBASE_COLLECTIONS_REGISTRY: registryPath };
+
+    const { stdout, exitCode } = run(["init", "--register", "work", "--format", "json"], dir, env);
+    expect(exitCode).toBe(0);
+    const parsed = JSON.parse(stdout);
+    expect(parsed.registered.alias).toBe("work");
+    expect(parsed.registered.path).toBe(dir);
+
+    const registry = JSON.parse(fs.readFileSync(registryPath, "utf-8"));
+    expect(registry.collections).toHaveLength(1);
+    expect(registry.collections[0].alias).toBe("work");
+    expect(registry.collections[0].path).toBe(dir);
+  });
+
+  it("--register without alias uses directory basename", () => {
+    const dir = makeTempDir();
+    const registryPath = path.join(dir, "state", "collections.json");
+    const env = { MDBASE_COLLECTIONS_REGISTRY: registryPath };
+    const subdir = path.join(dir, "my-vault");
+
+    const { exitCode } = run(["init", subdir, "--register"], dir, env);
+    expect(exitCode).toBe(0);
+
+    const registry = JSON.parse(fs.readFileSync(registryPath, "utf-8"));
+    expect(registry.collections).toHaveLength(1);
+    expect(registry.collections[0].alias).toBe("my-vault");
+    expect(registry.collections[0].path).toBe(subdir);
   });
 });
