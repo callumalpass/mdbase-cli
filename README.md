@@ -4,19 +4,32 @@ Command-line tool for working with [mdbase](https://github.com/callumalpass/mdba
 
 ## Install
 
-Requires Node.js 22+ and the [mdbase](https://github.com/callumalpass/mdbase) library.
+Requires Node.js 22+.
+
+### Recommended (npm global install)
 
 ```sh
-git clone https://github.com/callumalpass/mdbase.git
-git clone https://github.com/callumalpass/mdbase-cli.git
-cd mdbase && npm ci && cd ..
-cd mdbase-cli && npm ci && npm run build
+npm install -g mdbase-cli
+mdbase --help
 ```
 
-The CLI is available as `mdbase` via the `bin` entry, or run directly with:
+This installs both `mdbase` and `mdbase-fzf` on your `PATH`.
+
+### Project-local install
 
 ```sh
-node dist/cli.js
+npm install --save-dev mdbase-cli
+npx mdbase --help
+```
+
+### Development from source
+
+```sh
+git clone https://github.com/callumalpass/mdbase-cli.git
+cd mdbase-cli
+npm ci
+npm run build
+node dist/cli.js --help
 ```
 
 ## Usage
