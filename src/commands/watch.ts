@@ -2,6 +2,7 @@ import { Command } from "commander";
 import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
 import { watch as chokidarWatch } from "chokidar";
+import { closeAndExit } from "../utils.js";
 
 function timestamp(): string {
   return new Date().toISOString().replace("T", " ").replace(/\.\d+Z$/, "");
@@ -112,7 +113,7 @@ export function registerWatch(program: Command): void {
           } else {
             console.log(`\n${chalk.dim(timestamp())} ${chalk.dim("stopped")}`);
           }
-          process.exit(0);
+          closeAndExit(collection, 0);
         });
       };
 

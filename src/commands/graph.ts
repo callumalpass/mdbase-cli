@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
+import { closeAndExit } from "../utils.js";
 
 const WIKILINK_RE = /\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g;
 
@@ -178,7 +179,7 @@ export function registerGraph(program: Command): void {
           }
         }
       }
-      process.exit(0);
+      await closeAndExit(openResult.collection!, 0);
     });
 
   graph
@@ -216,7 +217,7 @@ export function registerGraph(program: Command): void {
           }
         }
       }
-      process.exit(0);
+      await closeAndExit(openResult.collection!, 0);
     });
 
   graph
@@ -246,7 +247,7 @@ export function registerGraph(program: Command): void {
         } else {
           console.error(chalk.red(`error: ${readResult.error.message}`));
         }
-        process.exit(4);
+        await closeAndExit(collection, 4);
       }
 
       const { incoming } = await buildGraph(collection);
@@ -264,7 +265,7 @@ export function registerGraph(program: Command): void {
           }
         }
       }
-      process.exit(0);
+      await closeAndExit(collection, 0);
     });
 
   graph
@@ -317,6 +318,6 @@ export function registerGraph(program: Command): void {
         console.log(`  ${chalk.dim("Components:")}  ${result.connected_components}`);
         console.log(`  ${chalk.dim("Density:")}     ${result.density}`);
       }
-      process.exit(0);
+      await closeAndExit(openResult.collection!, 0);
     });
 }

@@ -4,6 +4,7 @@ import path from "node:path";
 import chalk from "chalk";
 import { Collection, loadConfig } from "@callumalpass/mdbase";
 import yaml from "js-yaml";
+import { closeAndExit } from "../utils.js";
 
 interface InferredField {
   type: string;
@@ -111,7 +112,7 @@ export function registerSchema(program: Command): void {
       });
       if (queryResult.error) {
         console.error(chalk.red(`error: ${queryResult.error.message}`));
-        process.exit(1);
+        await closeAndExit(collection, 1);
       }
 
       const files = queryResult.results as Array<{
@@ -129,7 +130,7 @@ export function registerSchema(program: Command): void {
         } else {
           console.log(chalk.dim("No untyped files found"));
         }
-        process.exit(0);
+        await closeAndExit(collection, 0);
       }
 
       // Group by field signature
@@ -159,7 +160,7 @@ export function registerSchema(program: Command): void {
         } else {
           console.log(chalk.dim(`No field groups with >= ${minFiles} files found`));
         }
-        process.exit(0);
+        await closeAndExit(collection, 0);
       }
 
       const inferredTypes: InferredType[] = [];
@@ -253,6 +254,6 @@ export function registerSchema(program: Command): void {
         }
       }
 
-      process.exit(0);
+      await closeAndExit(collection, 0);
     });
 }

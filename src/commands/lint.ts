@@ -4,6 +4,7 @@ import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
 import type { MdbaseError } from "@callumalpass/mdbase";
 import yaml from "js-yaml";
+import { closeAndExit } from "../utils.js";
 
 interface LintIssue {
   path: string;
@@ -78,7 +79,7 @@ export function registerLint(program: Command): void {
           } else {
             console.error(chalk.red(`error: ${queryResult.error.message}`));
           }
-          process.exit(1);
+          await closeAndExit(collection, 1);
         }
         filePaths = (queryResult.results ?? []).map((r: { path: string }) => r.path);
       }
@@ -160,7 +161,7 @@ export function registerLint(program: Command): void {
       }
 
       const hasErrors = result.summary.errors > 0;
-      process.exit(hasErrors ? 2 : 0);
+      await closeAndExit(collection, hasErrors ? 2 : 0);
     });
 }
 

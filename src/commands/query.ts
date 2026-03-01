@@ -2,7 +2,7 @@ import { Command } from "commander";
 import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
 import Table from "cli-table3";
-import { splitList } from "../utils.js";
+import { splitList, closeAndExit } from "../utils.js";
 
 interface ResultRow {
   path: string;
@@ -118,7 +118,7 @@ export function registerQuery(program: Command): void {
         } else {
           console.error(chalk.red(`error: ${queryResult.error.message}`));
         }
-        process.exit(1);
+        await closeAndExit(collection, 1);
       }
 
       const results = queryResult.results as Array<{
@@ -132,7 +132,7 @@ export function registerQuery(program: Command): void {
       // --count: just print the count
       if (opts.count) {
         console.log(String(queryResult.meta?.total_count ?? results.length));
-        process.exit(0);
+        await closeAndExit(collection, 0);
       }
 
       if (results.length === 0) {
@@ -141,7 +141,7 @@ export function registerQuery(program: Command): void {
         } else if (opts.format !== "paths" && opts.format !== "csv" && opts.format !== "jsonl") {
           console.error(chalk.dim("No results"));
         }
-        process.exit(0);
+        await closeAndExit(collection, 0);
       }
 
       // Collect formula names
@@ -229,7 +229,7 @@ export function registerQuery(program: Command): void {
         }
       }
 
-      process.exit(0);
+      await closeAndExit(collection, 0);
     });
 }
 

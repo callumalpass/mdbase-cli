@@ -3,6 +3,7 @@ import chalk from "chalk";
 import yaml from "js-yaml";
 import { Collection, loadConfig, loadTypes, getType } from "@callumalpass/mdbase";
 import type { FieldDefinition, TypeDefinition } from "@callumalpass/mdbase";
+import { closeAndExit } from "../utils.js";
 
 function formatFieldType(field: FieldDefinition): string {
   let desc = field.type;
@@ -282,7 +283,7 @@ export function registerTypes(program: Command): void {
         } else {
           console.error(chalk.red(`error: ${openResult.error.message}`));
         }
-        process.exit(3);
+        await closeAndExit(null, 3);
       }
       const collection = openResult.collection!;
 
@@ -294,7 +295,8 @@ export function registerTypes(program: Command): void {
           const parsed = parseFieldSpec(f);
           if (!parsed) {
             console.error(chalk.red(`error: invalid field format: ${f} (expected name:type or name:type:required)`));
-            process.exit(1);
+            await closeAndExit(collection, 1);
+            return;
           }
           fields[parsed.name] = parsed.definition;
         }
@@ -334,15 +336,15 @@ export function registerTypes(program: Command): void {
       if (result.error) {
         const exitCode = result.error.code === "path_conflict" ? 1
           : result.error.code === "missing_parent_type" ? 1
-          : result.error.code === "invalid_type_definition" ? 2
-          : 1;
+            : result.error.code === "invalid_type_definition" ? 2
+              : 1;
 
         if (opts.format === "json") {
           console.log(JSON.stringify({ error: result.error }, null, 2));
         } else {
           console.error(chalk.red(`error: ${result.error.message}`));
         }
-        process.exit(exitCode);
+        await closeAndExit(collection, exitCode);
       }
 
       const typeDef = result.type!;
@@ -380,7 +382,7 @@ export function registerTypes(program: Command): void {
         }
       }
 
-      process.exit(0);
+      await closeAndExit(collection, 0);
     });
 }
 
