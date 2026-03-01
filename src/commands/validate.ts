@@ -3,6 +3,7 @@ import path from "node:path";
 import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
 import type { MdbaseError } from "@callumalpass/mdbase";
+import { closeAndExit } from "../utils.js";
 
 function formatIssue(issue: MdbaseError): string {
   const severity = issue.severity ?? "error";
@@ -87,7 +88,7 @@ export function registerValidate(program: Command): void {
           }
         }
 
-        process.exit(result.valid ? 0 : 2);
+        await closeAndExit(collection, result.valid ? 0 : 2);
       } else {
         // Validate specific files
         let allValid = true;
@@ -152,7 +153,7 @@ export function registerValidate(program: Command): void {
           }
         }
 
-        process.exit(allValid ? 0 : 2);
+        await closeAndExit(collection, allValid ? 0 : 2);
       }
     });
 }

@@ -4,6 +4,7 @@ import path from "node:path";
 import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
 import { parse } from "csv-parse/sync";
+import { closeAndExit } from "../utils.js";
 
 function coerceValue(value: string): unknown {
   if (value === "true") return true;
@@ -54,7 +55,7 @@ export function registerImport(program: Command): void {
         } else {
           console.error(chalk.red(`error: file not found: ${file}`));
         }
-        process.exit(4);
+        await closeAndExit(collection, 4);
       }
 
       const content = fs.readFileSync(csvPath, "utf-8");
@@ -102,7 +103,7 @@ export function registerImport(program: Command): void {
         }
       }
 
-      outputResult(result, opts.format);
+      outputResult(result, opts.format, collection);
     });
 
   imp
@@ -132,7 +133,7 @@ export function registerImport(program: Command): void {
         } else {
           console.error(chalk.red(`error: file not found: ${file}`));
         }
-        process.exit(4);
+        await closeAndExit(collection, 4);
       }
 
       const content = fs.readFileSync(jsonPath, "utf-8");
@@ -145,7 +146,7 @@ export function registerImport(program: Command): void {
         } else {
           console.error(chalk.red("error: failed to parse JSON file"));
         }
-        process.exit(1);
+        await closeAndExit(collection, 1);
         return;
       }
 
@@ -155,7 +156,7 @@ export function registerImport(program: Command): void {
         } else {
           console.error(chalk.red("error: JSON file must contain an array"));
         }
-        process.exit(1);
+        await closeAndExit(collection, 1);
         return;
       }
 
@@ -204,11 +205,11 @@ export function registerImport(program: Command): void {
         }
       }
 
-      outputResult(result, opts.format);
+      outputResult(result, opts.format, collection);
     });
 }
 
-function outputResult(result: ImportResult, format: string): void {
+async function outputResult(result: ImportResult, format: string, collection: { close(): Promise<void> }): Promise<void> {
   if (format === "json") {
     console.log(JSON.stringify(result, null, 2));
   } else {
@@ -228,5 +229,5 @@ function outputResult(result: ImportResult, format: string): void {
     }
   }
 
-  process.exit(result.failed > 0 ? 1 : 0);
+  await closeAndExit(collection, result.failed > 0 ? 1 : 0);
 }

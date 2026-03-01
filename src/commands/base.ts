@@ -8,6 +8,7 @@ import type { BaseFile } from "../base/parser.js";
 import { executeBase, BaseExecutionError } from "../base/executor.js";
 import { printResults } from "../base/formatter.js";
 import type { OutputFormat } from "../base/formatter.js";
+import { closeAndExit } from "../utils.js";
 
 export function registerBase(program: Command): void {
   const base = program
@@ -64,7 +65,7 @@ export function registerBase(program: Command): void {
         });
 
         printResults(results, opts.format as OutputFormat);
-        process.exit(0);
+        await closeAndExit(collection, 0);
       } catch (err) {
         if (err instanceof BaseExecutionError) {
           if (opts.format === "json") {
@@ -72,7 +73,7 @@ export function registerBase(program: Command): void {
           } else {
             console.error(chalk.red(`error: ${err.message}`));
           }
-          process.exit(err.code === "view_not_found" ? 1 : 1);
+          await closeAndExit(collection, err.code === "view_not_found" ? 1 : 1);
         }
         throw err;
       }

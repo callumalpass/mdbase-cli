@@ -6,6 +6,7 @@ import { Collection, loadConfig, loadTypes } from "@callumalpass/mdbase";
 import type { TypeDefinition } from "@callumalpass/mdbase";
 import yaml from "js-yaml";
 import matter from "gray-matter";
+import { closeAndExit } from "../utils.js";
 
 interface FmtFileResult {
   path: string;
@@ -59,7 +60,7 @@ export function registerFmt(program: Command): void {
           } else {
             console.error(chalk.red(`error: ${queryResult.error.message}`));
           }
-          process.exit(1);
+          await closeAndExit(collection, 1);
         }
         filePaths = (queryResult.results ?? []).map((r: { path: string }) => r.path);
       }
@@ -122,9 +123,9 @@ export function registerFmt(program: Command): void {
 
       // In --check mode, exit 1 if any files need formatting
       if (opts.check && changedCount > 0) {
-        process.exit(1);
+        await closeAndExit(collection, 1);
       }
-      process.exit(0);
+      await closeAndExit(collection, 0);
     });
 }
 

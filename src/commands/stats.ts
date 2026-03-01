@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
+import { closeAndExit } from "../utils.js";
 
 interface StatsResult {
   total_files: number;
@@ -43,7 +44,7 @@ export function registerStats(program: Command): void {
         } else {
           console.error(chalk.red(`error: ${queryResult.error.message}`));
         }
-        process.exit(1);
+        await closeAndExit(collection, 1);
       }
 
       const files = queryResult.results as Array<{
@@ -164,6 +165,6 @@ export function registerStats(program: Command): void {
         }
       }
 
-      process.exit(0);
+      await closeAndExit(collection, 0);
     });
 }

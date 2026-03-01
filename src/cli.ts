@@ -61,7 +61,7 @@ function outputCollectionOptionError(command: Command, code: string, message: st
   }
   const exitCode = code === "path_not_found" ? 4
     : code === "missing_config" || code === "invalid_config" ? 3
-    : 1;
+      : 1;
   process.exit(exitCode);
 }
 
