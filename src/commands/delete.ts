@@ -3,6 +3,7 @@ import path from "node:path";
 import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
 import yaml from "js-yaml";
+import { closeAndExit } from "../utils.js";
 
 export function registerDelete(program: Command): void {
   program
@@ -35,14 +36,14 @@ export function registerDelete(program: Command): void {
       if (result.error) {
         const exitCode = result.error.code === "file_not_found" ? 4
           : result.error.code === "permission_denied" ? 5
-          : 1;
+            : 1;
 
         if (opts.format === "json") {
           console.log(JSON.stringify({ error: result.error }, null, 2));
         } else {
           console.error(chalk.red(`error: ${result.error.message}`));
         }
-        process.exit(exitCode);
+        await closeAndExit(collection, exitCode);
       }
 
       const brokenLinks = result.broken_links ?? [];
@@ -85,6 +86,6 @@ export function registerDelete(program: Command): void {
         }
       }
 
-      process.exit(0);
+      await closeAndExit(collection, 0);
     });
 }

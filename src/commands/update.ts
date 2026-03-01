@@ -3,7 +3,7 @@ import path from "node:path";
 import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
 import yaml from "js-yaml";
-import { parseFieldValue } from "../utils.js";
+import { parseFieldValue, closeAndExit } from "../utils.js";
 
 function parseFields(fieldArgs: string[]): Record<string, unknown> {
   const fields: Record<string, unknown> = {};
@@ -52,7 +52,7 @@ export function registerUpdate(program: Command): void {
       // Need at least one thing to update
       if (!opts.field && opts.body === undefined && !opts.bodyStdin) {
         console.error(chalk.red("error: nothing to update (provide --field or --body)"));
-        process.exit(1);
+        await closeAndExit(collection, 1);
       }
 
       // Parse field values
@@ -89,15 +89,15 @@ export function registerUpdate(program: Command): void {
       if (result.error) {
         const exitCode = result.error.code === "file_not_found" ? 4
           : result.error.code === "validation_failed" ? 2
-          : result.error.code === "permission_denied" ? 5
-          : 1;
+            : result.error.code === "permission_denied" ? 5
+              : 1;
 
         if (opts.format === "json") {
           console.log(JSON.stringify({ error: result.error }, null, 2));
         } else {
           console.error(chalk.red(`error: ${result.error.message}`));
         }
-        process.exit(exitCode);
+        await closeAndExit(collection, exitCode);
       }
 
       switch (opts.format) {
@@ -141,6 +141,6 @@ export function registerUpdate(program: Command): void {
         }
       }
 
-      process.exit(0);
+      await closeAndExit(collection, 0);
     });
 }

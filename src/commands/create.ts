@@ -4,7 +4,7 @@ import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
 import type { MdbaseError } from "@callumalpass/mdbase";
 import yaml from "js-yaml";
-import { parseFieldValue } from "../utils.js";
+import { parseFieldValue, closeAndExit } from "../utils.js";
 
 function parseFields(fieldArgs: string[]): Record<string, unknown> {
   const frontmatter: Record<string, unknown> = {};
@@ -47,7 +47,7 @@ export function registerCreate(program: Command): void {
         } else {
           console.error(chalk.red(`error: ${openResult.error.message}`));
         }
-        process.exit(3);
+        await closeAndExit(null, 3);
       }
       const collection = openResult.collection!;
 
@@ -86,7 +86,7 @@ export function registerCreate(program: Command): void {
       }
 
       const result = await collection.create(input);
-      outputResult(result, relativePath, opts);
+      await outputResult(result, relativePath, opts, collection);
     });
 }
 
@@ -103,17 +103,18 @@ function formatIssue(issue: MdbaseError): string {
   return `  ${tag}${field}: ${issue.message} ${chalk.dim(`[${issue.code}]`)}`;
 }
 
-function outputResult(
+async function outputResult(
   result: { valid?: boolean; frontmatter?: Record<string, unknown>; body?: string; path?: string; error?: { code: string; message: string }; issues?: MdbaseError[] },
   requestedPath: string | undefined,
   opts: { format: string },
-): void {
+  collection: { close(): Promise<void> },
+): Promise<void> {
   if (result.error) {
     const exitCode = result.error.code === "path_conflict" ? 1
       : result.error.code === "unknown_type" ? 1
-      : result.error.code === "validation_failed" ? 2
-      : result.error.code === "permission_denied" ? 5
-      : 1;
+        : result.error.code === "validation_failed" ? 2
+          : result.error.code === "permission_denied" ? 5
+            : 1;
 
     if (opts.format === "json") {
       const output: Record<string, unknown> = { error: result.error };
@@ -129,7 +130,8 @@ function outputResult(
         }
       }
     }
-    process.exit(exitCode);
+    await closeAndExit(collection, exitCode);
+    return;
   }
 
   const outputPath = result.path ?? requestedPath;
@@ -175,5 +177,5 @@ function outputResult(
     }
   }
 
-  process.exit(0);
+  await closeAndExit(collection, 0);
 }
