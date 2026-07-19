@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.0-rc.1 - 2026-07-19
+- Publish the first v0.3 release candidate against the registry-hosted mdbase core package.
+- Verify the installed CLI tarball on Linux, macOS, and Windows.
+
 ## 0.3.0-alpha.1 - 2026-07-16
 - Default `init` to mdbase v0.3 and generate canonical JSON Schema type wrappers, while retaining explicit v0.2 initialization.
 - Add analyzed, approval-gated v0.2-to-v0.3 migration with readable diffs, durable backups, post-apply validation, and recovery.

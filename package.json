@@ -1,6 +1,6 @@
 {
   "name": "mdbase-cli",
-  "version": "0.3.0-alpha.1",
+  "version": "0.3.0-rc.1",
   "description": "CLI tool for mdbase collections — validate, query, CRUD, and execute Obsidian .base files",
   "license": "MIT",
   "repository": {
@@ -22,10 +22,11 @@
     "build": "tsc",
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
+    "test:package": "npm run build && node scripts/smoke-package.mjs",
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@callumalpass/mdbase": "file:../mdbase",
+    "@callumalpass/mdbase": "0.3.0-rc.1",
     "chalk": "^5.3.0",
     "chokidar": "^4.0.0",
     "cli-table3": "^0.6.0",
