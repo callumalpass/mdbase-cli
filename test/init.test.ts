@@ -156,12 +156,12 @@ describe("init command", () => {
     expect(exitCode).toBe(0);
     const parsed = JSON.parse(stdout);
     expect(parsed.registered.alias).toBe("work");
-    expect(parsed.registered.path).toBe(fs.realpathSync(dir));
+    expect(parsed.registered.path).toBe(fs.realpathSync.native(dir));
 
     const registry = JSON.parse(fs.readFileSync(registryPath, "utf-8"));
     expect(registry.collections).toHaveLength(1);
     expect(registry.collections[0].alias).toBe("work");
-    expect(registry.collections[0].path).toBe(fs.realpathSync(dir));
+    expect(registry.collections[0].path).toBe(fs.realpathSync.native(dir));
   });
 
   it("--register without alias uses directory basename", () => {
@@ -176,6 +176,6 @@ describe("init command", () => {
     const registry = JSON.parse(fs.readFileSync(registryPath, "utf-8"));
     expect(registry.collections).toHaveLength(1);
     expect(registry.collections[0].alias).toBe("my-vault");
-    expect(registry.collections[0].path).toBe(fs.realpathSync(subdir));
+    expect(registry.collections[0].path).toBe(fs.realpathSync.native(subdir));
   });
 });

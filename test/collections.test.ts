@@ -76,7 +76,7 @@ describe("collections command", () => {
     const parsed = JSON.parse(listed.stdout);
     expect(parsed).toHaveLength(1);
     expect(parsed[0].alias).toBe("work");
-    expect(parsed[0].path).toBe(fs.realpathSync(collectionPath));
+    expect(parsed[0].path).toBe(fs.realpathSync.native(collectionPath));
     expect(parsed[0].collection_name).toBe("Work Notes");
     expect(parsed[0].collection_description).toBe("Primary vault");
 
@@ -101,7 +101,7 @@ describe("collections command", () => {
     expect(result.exitCode).toBe(0);
     const parsed = JSON.parse(result.stdout);
     expect(parsed.alias).toBe("personal");
-    expect(parsed.path).toBe(fs.realpathSync(collectionPath));
+    expect(parsed.path).toBe(fs.realpathSync.native(collectionPath));
     expect(parsed.collection_name).toBe("Personal");
   });
 
