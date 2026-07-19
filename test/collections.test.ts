@@ -5,6 +5,7 @@ import path from "node:path";
 import os from "node:os";
 
 const CLI = path.resolve(__dirname, "../src/cli.ts");
+const TSX_CLI = path.resolve(__dirname, "../node_modules/tsx/dist/cli.mjs");
 const tempDirs: string[] = [];
 
 function run(
@@ -13,7 +14,7 @@ function run(
   extraEnv: Record<string, string> = {},
 ): { stdout: string; stderr: string; exitCode: number } {
   try {
-    const stdout = execFileSync("npx", ["tsx", CLI, ...args], {
+    const stdout = execFileSync(process.execPath, [TSX_CLI, CLI, ...args], {
       cwd,
       encoding: "utf-8",
       env: { ...process.env, NO_COLOR: "1", ...extraEnv },
@@ -75,7 +76,7 @@ describe("collections command", () => {
     const parsed = JSON.parse(listed.stdout);
     expect(parsed).toHaveLength(1);
     expect(parsed[0].alias).toBe("work");
-    expect(parsed[0].path).toBe(collectionPath);
+    expect(parsed[0].path).toBe(fs.realpathSync(collectionPath));
     expect(parsed[0].collection_name).toBe("Work Notes");
     expect(parsed[0].collection_description).toBe("Primary vault");
 
@@ -100,7 +101,7 @@ describe("collections command", () => {
     expect(result.exitCode).toBe(0);
     const parsed = JSON.parse(result.stdout);
     expect(parsed.alias).toBe("personal");
-    expect(parsed.path).toBe(collectionPath);
+    expect(parsed.path).toBe(fs.realpathSync(collectionPath));
     expect(parsed.collection_name).toBe("Personal");
   });
 

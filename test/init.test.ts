@@ -6,6 +6,7 @@ import os from "node:os";
 import yaml from "js-yaml";
 
 const CLI = path.resolve(__dirname, "../src/cli.ts");
+const TSX_CLI = path.resolve(__dirname, "../node_modules/tsx/dist/cli.mjs");
 
 function run(
   args: string[],
@@ -13,7 +14,7 @@ function run(
   extraEnv: Record<string, string> = {},
 ): { stdout: string; stderr: string; exitCode: number } {
   try {
-    const stdout = execFileSync("npx", ["tsx", CLI, ...args], {
+    const stdout = execFileSync(process.execPath, [TSX_CLI, CLI, ...args], {
       cwd,
       encoding: "utf-8",
       env: { ...process.env, NO_COLOR: "1", ...extraEnv },
@@ -115,7 +116,7 @@ describe("init command", () => {
     const { stdout, exitCode } = run(["init", "--format", "json", "--name", "test"], dir);
     expect(exitCode).toBe(0);
     const parsed = JSON.parse(stdout);
-    expect(parsed.root).toBe(dir);
+    expect(parsed.root).toBe(fs.realpathSync(dir));
     expect(parsed.files).toContain("mdbase.yaml");
     expect(parsed.name).toBe("test");
   });
@@ -155,12 +156,12 @@ describe("init command", () => {
     expect(exitCode).toBe(0);
     const parsed = JSON.parse(stdout);
     expect(parsed.registered.alias).toBe("work");
-    expect(parsed.registered.path).toBe(dir);
+    expect(parsed.registered.path).toBe(fs.realpathSync(dir));
 
     const registry = JSON.parse(fs.readFileSync(registryPath, "utf-8"));
     expect(registry.collections).toHaveLength(1);
     expect(registry.collections[0].alias).toBe("work");
-    expect(registry.collections[0].path).toBe(dir);
+    expect(registry.collections[0].path).toBe(fs.realpathSync(dir));
   });
 
   it("--register without alias uses directory basename", () => {
@@ -175,6 +176,6 @@ describe("init command", () => {
     const registry = JSON.parse(fs.readFileSync(registryPath, "utf-8"));
     expect(registry.collections).toHaveLength(1);
     expect(registry.collections[0].alias).toBe("my-vault");
-    expect(registry.collections[0].path).toBe(subdir);
+    expect(registry.collections[0].path).toBe(fs.realpathSync(subdir));
   });
 });

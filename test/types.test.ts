@@ -4,11 +4,12 @@ import { unlinkSync, existsSync } from "node:fs";
 import path from "node:path";
 
 const CLI = path.resolve(__dirname, "../src/cli.ts");
+const TSX_CLI = path.resolve(__dirname, "../node_modules/tsx/dist/cli.mjs");
 const VALID = path.resolve(__dirname, "fixtures/valid-collection");
 
 function run(args: string[], cwd: string): { stdout: string; stderr: string; exitCode: number } {
   try {
-    const stdout = execFileSync("npx", ["tsx", CLI, ...args], {
+    const stdout = execFileSync(process.execPath, [TSX_CLI, CLI, ...args], {
       cwd,
       encoding: "utf-8",
       env: { ...process.env, NO_COLOR: "1" },
@@ -72,12 +73,12 @@ describe("types list command", () => {
 
   describe("error handling", () => {
     it("exits 3 when no collection found", () => {
-      const { exitCode } = run(["types", "list"], "/tmp");
+      const { exitCode } = run(["types", "list"], path.dirname(VALID));
       expect(exitCode).toBe(3);
     });
 
     it("exits 3 with JSON error when no collection found", () => {
-      const { stdout, exitCode } = run(["types", "list", "--format", "json"], "/tmp");
+      const { stdout, exitCode } = run(["types", "list", "--format", "json"], path.dirname(VALID));
       expect(exitCode).toBe(3);
       const parsed = JSON.parse(stdout);
       expect(parsed.error).toBeDefined();
@@ -149,7 +150,7 @@ describe("types show command", () => {
     });
 
     it("exits 3 when no collection found", () => {
-      const { exitCode } = run(["types", "show", "note"], "/tmp");
+      const { exitCode } = run(["types", "show", "note"], path.dirname(VALID));
       expect(exitCode).toBe(3);
     });
   });
@@ -347,7 +348,7 @@ describe("types create command", () => {
     });
 
     it("exits 3 when no collection found", () => {
-      const { exitCode } = run(["types", "create", "test", "-f", "title:string"], "/tmp");
+      const { exitCode } = run(["types", "create", "test", "-f", "title:string"], path.dirname(VALID));
       expect(exitCode).toBe(3);
     });
   });

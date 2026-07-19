@@ -3,12 +3,13 @@ import { execFileSync } from "node:child_process";
 import path from "node:path";
 
 const CLI = path.resolve(__dirname, "../src/cli.ts");
+const TSX_CLI = path.resolve(__dirname, "../node_modules/tsx/dist/cli.mjs");
 const VALID = path.resolve(__dirname, "fixtures/valid-collection");
 const INVALID = path.resolve(__dirname, "fixtures/invalid-collection");
 
 function run(args: string[], cwd: string): { stdout: string; exitCode: number } {
   try {
-    const stdout = execFileSync("npx", ["tsx", CLI, ...args], {
+    const stdout = execFileSync(process.execPath, [TSX_CLI, CLI, ...args], {
       cwd,
       encoding: "utf-8",
       env: { ...process.env, NO_COLOR: "1" },
@@ -36,7 +37,7 @@ describe("validate command", () => {
     });
 
     it("exits 3 when no mdbase.yaml found", () => {
-      const { exitCode } = run(["validate"], "/tmp");
+      const { exitCode } = run(["validate"], path.dirname(VALID));
       expect(exitCode).toBe(3);
     });
   });

@@ -5,11 +5,12 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 const CLI = path.resolve(__dirname, "../src/cli.ts");
+const TSX_CLI = path.resolve(__dirname, "../node_modules/tsx/dist/cli.mjs");
 const tempDirs: string[] = [];
 
 function run(args: string[], cwd: string): { stdout: string; stderr: string; exitCode: number } {
   try {
-    const stdout = execFileSync("npx", ["tsx", CLI, ...args], {
+    const stdout = execFileSync(process.execPath, [TSX_CLI, CLI, ...args], {
       cwd,
       encoding: "utf8",
       env: { ...process.env, NO_COLOR: "1" },

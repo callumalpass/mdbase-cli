@@ -1,14 +1,16 @@
 import { describe, it, expect } from "vitest";
 import { execFileSync, spawn } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 const CLI = path.resolve(__dirname, "../src/cli.ts");
+const TSX_CLI = path.resolve(__dirname, "../node_modules/tsx/dist/cli.mjs");
 const VALID = path.resolve(__dirname, "fixtures/valid-collection");
 
 function run(args: string[], cwd: string): { stdout: string; stderr: string; exitCode: number } {
   try {
-    const stdout = execFileSync("npx", ["tsx", CLI, ...args], {
+    const stdout = execFileSync(process.execPath, [TSX_CLI, CLI, ...args], {
       cwd,
       encoding: "utf-8",
       env: { ...process.env, NO_COLOR: "1" },
@@ -22,12 +24,12 @@ function run(args: string[], cwd: string): { stdout: string; stderr: string; exi
 
 describe("watch command", () => {
   it("exits 3 outside collection", () => {
-    const { exitCode } = run(["watch"], "/tmp");
+    const { exitCode } = run(["watch"], os.tmpdir());
     expect(exitCode).toBe(3);
   });
 
   it("starts and emits events on file change then stops on SIGTERM", async () => {
-    const child = spawn("npx", ["tsx", CLI, "watch", "--format", "json"], {
+    const child = spawn(process.execPath, [TSX_CLI, CLI, "watch", "--format", "json"], {
       cwd: VALID,
       env: { ...process.env, NO_COLOR: "1" },
       stdio: ["pipe", "pipe", "pipe"],

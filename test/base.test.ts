@@ -1,9 +1,11 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 
 const CLI = path.resolve(__dirname, "../src/cli.ts");
+const TSX_CLI = path.resolve(__dirname, "../node_modules/tsx/dist/cli.mjs");
 const VALID = path.resolve(__dirname, "fixtures/valid-collection");
 
 function run(
@@ -11,7 +13,7 @@ function run(
   cwd: string,
 ): { stdout: string; stderr: string; exitCode: number } {
   try {
-    const stdout = execFileSync("npx", ["tsx", CLI, ...args], {
+    const stdout = execFileSync(process.execPath, [TSX_CLI, CLI, ...args], {
       cwd,
       encoding: "utf-8",
       env: { ...process.env, NO_COLOR: "1" },
@@ -347,8 +349,8 @@ describe("base run", () => {
 
     it("exits 3 when no collection found", () => {
       createTempBase("_test-no-coll.base", "views:\n  - type: table\n");
-      // Copy to /tmp so there's no mdbase.yaml
-      const tmpFile = path.join("/tmp", "_test-no-coll.base");
+      const tempRoot = os.tmpdir();
+      const tmpFile = path.join(tempRoot, "_test-no-coll.base");
       fs.copyFileSync(
         path.join(VALID, "_test-no-coll.base"),
         tmpFile,
@@ -356,7 +358,7 @@ describe("base run", () => {
       try {
         const { exitCode, stderr } = run(
           ["base", "run", "_test-no-coll.base"],
-          "/tmp",
+          tempRoot,
         );
         expect(exitCode).toBe(3);
       } finally {
