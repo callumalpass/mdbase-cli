@@ -4,15 +4,15 @@ import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
 import type { MdbaseError } from "@callumalpass/mdbase";
 import yaml from "js-yaml";
-import { parseFieldValue } from "../utils.js";
+import { finishCommand, parseFieldValue } from "../utils.js";
 
-function parseFields(fieldArgs: string[]): Record<string, unknown> {
+function parseFields(fieldArgs: string[]): Record<string, unknown> | null {
   const frontmatter: Record<string, unknown> = {};
   for (const f of fieldArgs) {
     const eqIdx = f.indexOf("=");
     if (eqIdx === -1) {
       console.error(chalk.red(`error: invalid field format: ${f} (expected key=value)`));
-      process.exit(1);
+      return null;
     }
     const key = f.slice(0, eqIdx);
     const rawValue = f.slice(eqIdx + 1);
@@ -53,6 +53,10 @@ export function registerCreate(program: Command): void {
 
       // Parse field values
       const frontmatter = opts.field ? parseFields(opts.field as string[]) : {};
+      if (!frontmatter) {
+        await finishCommand(collection, 1);
+        return;
+      }
 
       // Read body from stdin if requested
       let body: string | undefined = opts.body;
@@ -86,7 +90,8 @@ export function registerCreate(program: Command): void {
       }
 
       const result = await collection.create(input);
-      outputResult(result, relativePath, opts);
+      const exitCode = outputResult(result, relativePath, opts);
+      await finishCommand(collection, exitCode);
     });
 }
 
@@ -107,7 +112,7 @@ function outputResult(
   result: { valid?: boolean; frontmatter?: Record<string, unknown>; body?: string; path?: string; error?: { code: string; message: string }; issues?: MdbaseError[] },
   requestedPath: string | undefined,
   opts: { format: string },
-): void {
+): number {
   if (result.error) {
     const exitCode = result.error.code === "path_conflict" ? 1
       : result.error.code === "unknown_type" ? 1
@@ -129,7 +134,7 @@ function outputResult(
         }
       }
     }
-    process.exit(exitCode);
+    return exitCode;
   }
 
   const outputPath = result.path ?? requestedPath;
@@ -175,5 +180,5 @@ function outputResult(
     }
   }
 
-  process.exit(0);
+  return 0;
 }

@@ -3,7 +3,7 @@ import fs from "node:fs";
 import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
 import { stringify } from "csv-stringify/sync";
-import { splitList } from "../utils.js";
+import { finishCommand, splitList } from "../utils.js";
 
 function formatValue(value: unknown): string {
   if (value === null || value === undefined) return "";
@@ -54,7 +54,8 @@ export function registerExport(program: Command): void {
         } else {
           console.error(chalk.red(`error: ${queryResult.error.message}`));
         }
-        process.exit(1);
+        await finishCommand(collection, 1);
+        return;
       }
 
       const results = queryResult.results as Array<{
@@ -120,6 +121,6 @@ export function registerExport(program: Command): void {
         console.log(output);
       }
 
-      process.exit(0);
+      await finishCommand(collection, 0);
     });
 }

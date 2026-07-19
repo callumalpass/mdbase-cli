@@ -3,15 +3,15 @@ import path from "node:path";
 import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
 import yaml from "js-yaml";
-import { parseFieldValue } from "../utils.js";
+import { finishCommand, parseFieldValue } from "../utils.js";
 
-function parseFields(fieldArgs: string[]): Record<string, unknown> {
+function parseFields(fieldArgs: string[]): Record<string, unknown> | null {
   const fields: Record<string, unknown> = {};
   for (const f of fieldArgs) {
     const eqIdx = f.indexOf("=");
     if (eqIdx === -1) {
       console.error(chalk.red(`error: invalid field format: ${f} (expected key=value)`));
-      process.exit(1);
+      return null;
     }
     const key = f.slice(0, eqIdx);
     const rawValue = f.slice(eqIdx + 1);
@@ -52,11 +52,16 @@ export function registerUpdate(program: Command): void {
       // Need at least one thing to update
       if (!opts.field && opts.body === undefined && !opts.bodyStdin) {
         console.error(chalk.red("error: nothing to update (provide --field or --body)"));
-        process.exit(1);
+        await finishCommand(collection, 1);
+        return;
       }
 
       // Parse field values
       const fields = opts.field ? parseFields(opts.field as string[]) : undefined;
+      if (fields === null) {
+        await finishCommand(collection, 1);
+        return;
+      }
 
       // Read body from stdin if requested
       let body: string | undefined = opts.body;
@@ -97,7 +102,8 @@ export function registerUpdate(program: Command): void {
         } else {
           console.error(chalk.red(`error: ${result.error.message}`));
         }
-        process.exit(exitCode);
+        await finishCommand(collection, exitCode);
+        return;
       }
 
       switch (opts.format) {
@@ -141,6 +147,6 @@ export function registerUpdate(program: Command): void {
         }
       }
 
-      process.exit(0);
+      await finishCommand(collection, 0);
     });
 }

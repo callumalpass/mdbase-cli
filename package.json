@@ -1,7 +1,16 @@
 {
   "name": "mdbase-cli",
-  "version": "0.1.0",
+  "version": "0.3.0-alpha.1",
   "description": "CLI tool for mdbase collections — validate, query, CRUD, and execute Obsidian .base files",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/callumalpass/mdbase-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/callumalpass/mdbase-cli/issues"
+  },
+  "homepage": "https://github.com/callumalpass/mdbase-cli#readme",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,7 +25,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@callumalpass/mdbase": "^0.2.2",
+    "@callumalpass/mdbase": "file:../mdbase",
     "chalk": "^5.3.0",
     "chokidar": "^4.0.0",
     "cli-table3": "^0.6.0",
@@ -24,15 +33,15 @@
     "csv-parse": "^5.0.0",
     "csv-stringify": "^6.0.0",
     "gray-matter": "^4.0.3",
-    "js-yaml": "^4.1.0",
-    "picomatch": "^4.0.0"
+    "js-yaml": "^4.3.0",
+    "picomatch": "^4.0.5"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.0",
     "@types/node": "^22.0.0",
     "tsx": "^4.0.0",
     "typescript": "^5.5.0",
-    "vitest": "^2.0.0"
+    "vitest": "^4.1.10"
   },
   "files": [
     "dist",

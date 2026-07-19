@@ -1,3 +1,22 @@
+type ClosableCollection = {
+  close(): Promise<void>;
+};
+
+export async function finishCommand(
+  collection: ClosableCollection | null | undefined,
+  code: number,
+): Promise<void> {
+  process.exitCode = code;
+
+  if (!collection) return;
+
+  try {
+    await collection.close();
+  } catch {
+    // Best-effort cleanup: preserve the command's intended exit status.
+  }
+}
+
 export function splitList(value: string | undefined): string[] | undefined {
   if (value === undefined) return undefined;
   const parts = value.split(",").map((s) => s.trim()).filter((s) => s.length > 0);

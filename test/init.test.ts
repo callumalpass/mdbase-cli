@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import yaml from "js-yaml";
 
 const CLI = path.resolve(__dirname, "../src/cli.ts");
 
@@ -40,18 +41,16 @@ afterEach(() => {
 });
 
 describe("init command", () => {
-  it("creates mdbase.yaml, _types/ folder, and meta type", () => {
+  it("creates a minimal v0.3 collection by default", () => {
     const dir = makeTempDir();
     const { stdout, exitCode } = run(["init"], dir);
     expect(exitCode).toBe(0);
     expect(stdout).toContain("initialized");
     expect(fs.existsSync(path.join(dir, "mdbase.yaml"))).toBe(true);
     expect(fs.existsSync(path.join(dir, "_types"))).toBe(true);
-    expect(fs.existsSync(path.join(dir, "_types", "meta.md"))).toBe(true);
-
-    const metaContent = fs.readFileSync(path.join(dir, "_types", "meta.md"), "utf-8");
-    expect(metaContent).toContain("name: meta");
-    expect(metaContent).toContain('path_glob: "_types/**/*.md"');
+    expect(fs.existsSync(path.join(dir, "_types", "meta.md"))).toBe(false);
+    const config = yaml.load(fs.readFileSync(path.join(dir, "mdbase.yaml"), "utf-8")) as Record<string, unknown>;
+    expect(config.spec_version).toBe("0.3.0");
   });
 
   it("--name sets collection name", () => {
@@ -69,18 +68,46 @@ describe("init command", () => {
     expect(exitCode).toBe(0);
     expect(fs.existsSync(path.join(dir, "_types", "article.md"))).toBe(true);
     const content = fs.readFileSync(path.join(dir, "_types", "article.md"), "utf-8");
+    expect(content).toContain("kind: mdbase.type");
     expect(content).toContain("name: article");
-    expect(content).toContain("title:");
+    expect(content).toContain("dialect: json-schema-2020-12");
+    expect(content).toContain("minLength: 1");
   });
 
-  it("--types-folder uses custom types folder with adjusted meta type", () => {
+  it("--types-folder uses a custom v0.3 types folder", () => {
     const dir = makeTempDir();
     const { exitCode } = run(["init", "--types-folder", "schemas"], dir);
     expect(exitCode).toBe(0);
-    expect(fs.existsSync(path.join(dir, "schemas", "meta.md"))).toBe(true);
+    expect(fs.existsSync(path.join(dir, "schemas"))).toBe(true);
+    expect(fs.existsSync(path.join(dir, "schemas", "meta.md"))).toBe(false);
+    const config = yaml.load(fs.readFileSync(path.join(dir, "mdbase.yaml"), "utf-8")) as {
+      settings?: { types_folder?: string };
+    };
+    expect(config.settings?.types_folder).toBe("schemas");
+  });
 
-    const metaContent = fs.readFileSync(path.join(dir, "schemas", "meta.md"), "utf-8");
-    expect(metaContent).toContain('path_glob: "schemas/**/*.md"');
+  it("--spec-version 0.2.1 retains the legacy meta and type grammar", () => {
+    const dir = makeTempDir();
+    const { exitCode } = run([
+      "init",
+      "--spec-version",
+      "0.2.1",
+      "--example-type",
+      "article",
+    ], dir);
+    expect(exitCode).toBe(0);
+    expect(fs.existsSync(path.join(dir, "_types", "meta.md"))).toBe(true);
+    const content = fs.readFileSync(path.join(dir, "_types", "article.md"), "utf-8");
+    expect(content).toContain("fields:");
+    expect(content).not.toContain("kind: mdbase.type");
+  });
+
+  it("rejects unsafe types folders without writing a config", () => {
+    const dir = makeTempDir();
+    const { stderr, exitCode } = run(["init", "--types-folder", "../schemas"], dir);
+    expect(exitCode).toBe(5);
+    expect(stderr).toContain("without traversal segments");
+    expect(fs.existsSync(path.join(dir, "mdbase.yaml"))).toBe(false);
   });
 
   it("--format json outputs structured JSON", () => {
@@ -115,7 +142,8 @@ describe("init command", () => {
     const { exitCode } = run(["init", subdir], dir);
     expect(exitCode).toBe(0);
     expect(fs.existsSync(path.join(subdir, "mdbase.yaml"))).toBe(true);
-    expect(fs.existsSync(path.join(subdir, "_types", "meta.md"))).toBe(true);
+    expect(fs.existsSync(path.join(subdir, "_types"))).toBe(true);
+    expect(fs.existsSync(path.join(subdir, "_types", "meta.md"))).toBe(false);
   });
 
   it("--register with explicit alias registers collection", () => {

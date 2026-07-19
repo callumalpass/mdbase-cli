@@ -2,7 +2,7 @@ import { Command } from "commander";
 import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
 import Table from "cli-table3";
-import { splitList } from "../utils.js";
+import { finishCommand, splitList } from "../utils.js";
 
 interface ResultRow {
   path: string;
@@ -50,7 +50,7 @@ export function registerQuery(program: Command): void {
     .option("--limit <n>", "Limit results", parseInt)
     .option("--offset <n>", "Skip results", parseInt)
     .option("--body", "Include body in output")
-    .option("--format <format>", "Output format: table, json, jsonl, csv, paths", "table")
+    .option("--format <format>", "Output format: table, json, jsonl, csv, paths", "paths")
     .option("--fields <fields>", "Fields to include (comma-separated)")
     .option("--formula <expr>", "Computed formula as name=expr (repeatable)", collect, [])
     .option("--count", "Only show result count")
@@ -95,7 +95,8 @@ export function registerQuery(program: Command): void {
           const eqIdx = f.indexOf("=");
           if (eqIdx === -1) {
             console.error(chalk.red(`error: invalid formula format: ${f} (expected name=expression)`));
-            process.exit(1);
+            await finishCommand(collection, 1);
+            return;
           }
           formulas[f.slice(0, eqIdx)] = f.slice(eqIdx + 1);
         }
@@ -118,7 +119,8 @@ export function registerQuery(program: Command): void {
         } else {
           console.error(chalk.red(`error: ${queryResult.error.message}`));
         }
-        process.exit(1);
+        await finishCommand(collection, 1);
+        return;
       }
 
       const results = queryResult.results as Array<{
@@ -132,7 +134,8 @@ export function registerQuery(program: Command): void {
       // --count: just print the count
       if (opts.count) {
         console.log(String(queryResult.meta?.total_count ?? results.length));
-        process.exit(0);
+        await finishCommand(collection, 0);
+        return;
       }
 
       if (results.length === 0) {
@@ -141,7 +144,8 @@ export function registerQuery(program: Command): void {
         } else if (opts.format !== "paths" && opts.format !== "csv" && opts.format !== "jsonl") {
           console.error(chalk.dim("No results"));
         }
-        process.exit(0);
+        await finishCommand(collection, 0);
+        return;
       }
 
       // Collect formula names
@@ -229,7 +233,7 @@ export function registerQuery(program: Command): void {
         }
       }
 
-      process.exit(0);
+      await finishCommand(collection, 0);
     });
 }
 

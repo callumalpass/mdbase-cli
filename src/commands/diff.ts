@@ -2,6 +2,7 @@ import { Command } from "commander";
 import path from "node:path";
 import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
+import { finishCommand } from "../utils.js";
 
 interface FieldDiff {
   field: string;
@@ -78,7 +79,8 @@ export function registerDiff(program: Command): void {
         } else {
           console.error(chalk.red(`error: ${pathA}: ${readA.error.message}`));
         }
-        process.exit(4);
+        await finishCommand(collection, 4);
+        return;
       }
       if (readB.error) {
         if (opts.format === "json") {
@@ -86,7 +88,8 @@ export function registerDiff(program: Command): void {
         } else {
           console.error(chalk.red(`error: ${pathB}: ${readB.error.message}`));
         }
-        process.exit(4);
+        await finishCommand(collection, 4);
+        return;
       }
 
       const fmA = readA.frontmatter ?? {};
@@ -136,7 +139,8 @@ export function registerDiff(program: Command): void {
       } else {
         if (result.identical) {
           console.log(chalk.green("Files are identical"));
-          process.exit(0);
+          await finishCommand(collection, 0);
+          return;
         }
 
         console.log(`${chalk.bold(pathA)} ${chalk.dim("vs")} ${chalk.bold(pathB)}`);
@@ -169,6 +173,6 @@ export function registerDiff(program: Command): void {
         }
       }
 
-      process.exit(0);
+      await finishCommand(collection, 0);
     });
 }

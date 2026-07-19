@@ -54,6 +54,7 @@ Global option:
 | `delete`   | Delete a document                                |
 | `rename`   | Rename a document                                |
 | `types`    | List or inspect registered types                 |
+| `migrate v0.3` | Analyze or safely apply a v0.2-to-v0.3 migration |
 
 ### Obsidian Bases
 
@@ -104,11 +105,31 @@ Query documents of a given type:
 mdbase query "status = published" --types note --sort created --limit 10
 ```
 
+`query` defaults to `--format paths` for fast output on large vaults. Use `--format table` for tabular display.
+
 Execute an Obsidian `.base` file:
 
 ```sh
 mdbase base run my-view.base
 ```
+
+Analyze a v0.2 collection without changing it, review the diff and JSON report,
+then apply that exact analysis with backup and rollback protection:
+
+```sh
+mdbase migrate v0.3 analyze --report migration-report.json
+mdbase migrate v0.3 apply --report migration-report.json --yes
+mdbase migrate v0.3 recover --backup .mdbase/migrations/v0.3-<id> --yes
+```
+
+Apply writes a durable backup manifest before replacing files and journals each
+atomic replacement. `recover` verifies backup hashes before restoring an
+interrupted or applied migration and reports any paths that require manual
+recovery.
+
+Analysis exits with status 2 when records are incompatible or features need
+manual handling. Applying such a report additionally requires
+`--allow-partial`.
 
 Export to CSV:
 
@@ -119,8 +140,10 @@ mdbase export . --type note --format csv -o notes.csv
 Initialize and register a collection alias:
 
 ```sh
-mdbase init --register work
+mdbase init --name Work --example-type task --register work
 ```
+
+`init` creates a v0.3 collection by default. Use `--spec-version 0.2.1` only when a legacy consumer requires the v0.2 type grammar.
 
 List markdown files from all registered collections:
 

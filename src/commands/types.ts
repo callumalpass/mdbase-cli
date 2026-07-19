@@ -3,6 +3,7 @@ import chalk from "chalk";
 import yaml from "js-yaml";
 import { Collection, loadConfig, loadTypes, getType } from "@callumalpass/mdbase";
 import type { FieldDefinition, TypeDefinition } from "@callumalpass/mdbase";
+import { finishCommand } from "../utils.js";
 
 function formatFieldType(field: FieldDefinition): string {
   let desc = field.type;
@@ -294,7 +295,8 @@ export function registerTypes(program: Command): void {
           const parsed = parseFieldSpec(f);
           if (!parsed) {
             console.error(chalk.red(`error: invalid field format: ${f} (expected name:type or name:type:required)`));
-            process.exit(1);
+            await finishCommand(collection, 1);
+            return;
           }
           fields[parsed.name] = parsed.definition;
         }
@@ -342,7 +344,8 @@ export function registerTypes(program: Command): void {
         } else {
           console.error(chalk.red(`error: ${result.error.message}`));
         }
-        process.exit(exitCode);
+        await finishCommand(collection, exitCode);
+        return;
       }
 
       const typeDef = result.type!;
@@ -380,7 +383,7 @@ export function registerTypes(program: Command): void {
         }
       }
 
-      process.exit(0);
+      await finishCommand(collection, 0);
     });
 }
 

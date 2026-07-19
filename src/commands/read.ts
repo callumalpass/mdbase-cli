@@ -3,6 +3,7 @@ import path from "node:path";
 import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
 import yaml from "js-yaml";
+import { finishCommand } from "../utils.js";
 
 type ReadResultExtras = {
   warnings?: Array<{ code: string; message: string; field?: string }>;
@@ -59,7 +60,8 @@ export function registerRead(program: Command): void {
         } else {
           console.error(chalk.red(`error: ${result.error.message}`));
         }
-        process.exit(exitCode);
+        await finishCommand(collection, exitCode);
+        return;
       }
 
       const frontmatter = opts.raw ? result.rawFrontmatter : result.frontmatter;
@@ -147,6 +149,6 @@ export function registerRead(program: Command): void {
         }
       }
 
-      process.exit(0);
+      await finishCommand(collection, 0);
     });
 }

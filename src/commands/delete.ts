@@ -3,6 +3,7 @@ import path from "node:path";
 import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
 import yaml from "js-yaml";
+import { finishCommand } from "../utils.js";
 
 export function registerDelete(program: Command): void {
   program
@@ -42,7 +43,8 @@ export function registerDelete(program: Command): void {
         } else {
           console.error(chalk.red(`error: ${result.error.message}`));
         }
-        process.exit(exitCode);
+        await finishCommand(collection, exitCode);
+        return;
       }
 
       const brokenLinks = result.broken_links ?? [];
@@ -85,6 +87,6 @@ export function registerDelete(program: Command): void {
         }
       }
 
-      process.exit(0);
+      await finishCommand(collection, 0);
     });
 }

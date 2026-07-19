@@ -2,6 +2,7 @@ import { Command } from "commander";
 import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
 import { watch as chokidarWatch } from "chokidar";
+import { finishCommand } from "../utils.js";
 
 function timestamp(): string {
   return new Date().toISOString().replace("T", " ").replace(/\.\d+Z$/, "");
@@ -104,15 +105,18 @@ export function registerWatch(program: Command): void {
         .on("unlink", (p: string) => handleChange("unlink", p));
 
       // Clean shutdown
+      let shuttingDown = false;
       const cleanup = () => {
+        if (shuttingDown) return;
+        shuttingDown = true;
         if (debounceTimer) clearTimeout(debounceTimer);
-        watcher.close().then(() => {
+        watcher.close().then(async () => {
           if (opts.format === "json") {
             console.log(JSON.stringify({ event: "stop" }));
           } else {
             console.log(`\n${chalk.dim(timestamp())} ${chalk.dim("stopped")}`);
           }
-          process.exit(0);
+          await finishCommand(collection, 0);
         });
       };
 

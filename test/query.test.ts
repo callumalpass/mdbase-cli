@@ -156,16 +156,17 @@ describe("query command", () => {
       }
     });
 
-    it("outputs table format by default", () => {
+    it("outputs paths format by default", () => {
       const { stdout, exitCode } = run(
         ["query", "--types", "note", "--fields", "title,rating"],
         VALID,
       );
       expect(exitCode).toBe(0);
-      // cli-table3 uses box drawing characters
-      expect(stdout).toContain("│");
-      expect(stdout).toContain("title");
-      expect(stdout).toContain("rating");
+      const lines = stdout.trim().split("\n");
+      expect(lines.length).toBeGreaterThan(0);
+      for (const line of lines) {
+        expect(line.endsWith(".md")).toBe(true);
+      }
     });
   });
 

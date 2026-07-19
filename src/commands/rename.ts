@@ -3,6 +3,7 @@ import path from "node:path";
 import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
 import yaml from "js-yaml";
+import { finishCommand } from "../utils.js";
 
 export function registerRename(program: Command): void {
   program
@@ -46,7 +47,8 @@ export function registerRename(program: Command): void {
         // but some ref updates failed. Show success output with warnings.
         if (result.error.code === "rename_ref_update_failed") {
           outputSuccess(relativeFrom, relativeTo, result, opts.format);
-          process.exit(0);
+          await finishCommand(collection, 0);
+          return;
         }
 
         const exitCode = result.error.code === "file_not_found" ? 4
@@ -58,11 +60,12 @@ export function registerRename(program: Command): void {
         } else {
           console.error(chalk.red(`error: ${result.error.message}`));
         }
-        process.exit(exitCode);
+        await finishCommand(collection, exitCode);
+        return;
       }
 
       outputSuccess(relativeFrom, relativeTo, result, opts.format);
-      process.exit(0);
+      await finishCommand(collection, 0);
     });
 }
 

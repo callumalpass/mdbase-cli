@@ -25,6 +25,7 @@ import { registerWatch } from "./commands/watch.js";
 import { registerDiff } from "./commands/diff.js";
 import { registerSchema } from "./commands/schema.js";
 import { registerCollections } from "./commands/collections.js";
+import { registerMigrate } from "./commands/migrate.js";
 import { RegistryError, showCollection } from "./collections/registry.js";
 
 class CollectionOptionError extends Error {
@@ -124,6 +125,7 @@ registerUpdate(program);
 registerDelete(program);
 registerRename(program);
 registerTypes(program);
+registerMigrate(program);
 
 // Obsidian Bases integration
 registerBase(program);

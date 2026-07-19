@@ -4,6 +4,7 @@ import path from "node:path";
 import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
 import { parse } from "csv-parse/sync";
+import { finishCommand } from "../utils.js";
 
 function coerceValue(value: string): unknown {
   if (value === "true") return true;
@@ -54,7 +55,8 @@ export function registerImport(program: Command): void {
         } else {
           console.error(chalk.red(`error: file not found: ${file}`));
         }
-        process.exit(4);
+        await finishCommand(collection, 4);
+        return;
       }
 
       const content = fs.readFileSync(csvPath, "utf-8");
@@ -102,7 +104,8 @@ export function registerImport(program: Command): void {
         }
       }
 
-      outputResult(result, opts.format);
+      const exitCode = outputResult(result, opts.format);
+      await finishCommand(collection, exitCode);
     });
 
   imp
@@ -132,7 +135,8 @@ export function registerImport(program: Command): void {
         } else {
           console.error(chalk.red(`error: file not found: ${file}`));
         }
-        process.exit(4);
+        await finishCommand(collection, 4);
+        return;
       }
 
       const content = fs.readFileSync(jsonPath, "utf-8");
@@ -145,7 +149,7 @@ export function registerImport(program: Command): void {
         } else {
           console.error(chalk.red("error: failed to parse JSON file"));
         }
-        process.exit(1);
+        await finishCommand(collection, 1);
         return;
       }
 
@@ -155,7 +159,7 @@ export function registerImport(program: Command): void {
         } else {
           console.error(chalk.red("error: JSON file must contain an array"));
         }
-        process.exit(1);
+        await finishCommand(collection, 1);
         return;
       }
 
@@ -204,11 +208,12 @@ export function registerImport(program: Command): void {
         }
       }
 
-      outputResult(result, opts.format);
+      const exitCode = outputResult(result, opts.format);
+      await finishCommand(collection, exitCode);
     });
 }
 
-function outputResult(result: ImportResult, format: string): void {
+function outputResult(result: ImportResult, format: string): number {
   if (format === "json") {
     console.log(JSON.stringify(result, null, 2));
   } else {
@@ -228,5 +233,5 @@ function outputResult(result: ImportResult, format: string): void {
     }
   }
 
-  process.exit(result.failed > 0 ? 1 : 0);
+  return result.failed > 0 ? 1 : 0;
 }
