@@ -60,16 +60,22 @@ export interface BaseGroupBy {
   direction?: "ASC" | "DESC";
 }
 
+export interface BaseSort {
+  property: string;
+  direction?: "ASC" | "DESC";
+}
+
 export interface BaseViewSummaries {
   [propertyId: string]: string; // property -> summary type or formula
 }
 
 export interface BaseView {
-  type: "table" | "cards" | "list" | "map";
+  type: string;
   name?: string;
   limit?: number;
   filters?: FilterExpression;
   groupBy?: BaseGroupBy;
+  sort?: BaseSort[];
   order?: string[];
   summaries?: BaseViewSummaries;
   // Table-specific
@@ -85,6 +91,7 @@ export interface BaseView {
   // Map-specific
   coordinatesProperty?: string;
   tileUrl?: string;
+  [key: string]: unknown;
 }
 
 export interface BaseFile {
@@ -93,6 +100,7 @@ export interface BaseFile {
   properties?: Record<string, BasePropertyConfig>;
   summaries?: Record<string, string>;
   views?: BaseView[];
+  [key: string]: unknown;
 }
 
 export interface ParseError {
@@ -154,6 +162,12 @@ export function parseBaseFilePath(filePath: string): ParseResult {
 function validateBaseStructure(raw: BaseFile): BaseFile {
   const base: BaseFile = {};
 
+  for (const [key, value] of Object.entries(raw)) {
+    if (!["filters", "formulas", "properties", "summaries", "views"].includes(key)) {
+      base[key] = value;
+    }
+  }
+
   if (raw.filters !== undefined) {
     base.filters = raw.filters;
   }
@@ -175,12 +189,14 @@ function validateBaseStructure(raw: BaseFile): BaseFile {
 
 function normalizeView(raw: BaseView): BaseView {
   const view: BaseView = {
+    ...raw,
     type: raw.type ?? "table",
   };
   if (raw.name != null) view.name = raw.name;
   if (raw.limit != null) view.limit = raw.limit;
   if (raw.filters != null) view.filters = raw.filters;
   if (raw.groupBy != null) view.groupBy = raw.groupBy;
+  if (raw.sort != null) view.sort = raw.sort;
   if (raw.order != null) view.order = raw.order;
   if (raw.summaries != null) view.summaries = raw.summaries;
   // Table

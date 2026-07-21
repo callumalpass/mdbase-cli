@@ -1,6 +1,6 @@
 # mdbase-cli
 
-Command-line tool for working with [mdbase](https://github.com/callumalpass/mdbase) collections. Validates, queries, and performs CRUD operations on markdown document collections. Can also execute Obsidian `.base` files.
+Command-line tool for working with [mdbase](https://github.com/callumalpass/mdbase) collections. Validates, queries, executes portable Markdown view records, and performs CRUD operations on markdown document collections. It can also execute Obsidian `.base` files.
 
 ## Install
 
@@ -48,6 +48,7 @@ Global option:
 |------------|--------------------------------------------------|
 | `validate` | Validate documents against their type schemas    |
 | `query`    | Query documents with filters and sorting         |
+| `view`     | Validate or execute portable Markdown views      |
 | `read`     | Read a single document by path or ID             |
 | `create`   | Create a new document                            |
 | `update`   | Update an existing document                      |
@@ -111,6 +112,13 @@ Execute an Obsidian `.base` file:
 
 ```sh
 mdbase base run my-view.base
+```
+
+Execute a portable named view with a fixed invocation context:
+
+```sh
+mdbase view run views/tasks.md --view project-open --context projects/alpha.md
+mdbase view validate views/tasks.md
 ```
 
 Analyze a v0.2 collection without changing it, review the diff and JSON report,

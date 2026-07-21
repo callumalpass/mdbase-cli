@@ -238,6 +238,27 @@ describe("base run", () => {
       }
     });
 
+    it("maps the native Base sort array to query ordering", () => {
+      createTempBase("_test-sort.base", `views:
+  - type: table
+    name: Sorted
+    order: [note.title, note.rating]
+    sort:
+      - property: note.rating
+        direction: DESC
+`);
+      const { stdout, exitCode } = run(
+        ["base", "run", "_test-sort.base", "--format", "json"],
+        VALID,
+      );
+      expect(exitCode).toBe(0);
+      const parsed = JSON.parse(stdout);
+      const nonNull = parsed.results
+        .map((row: { rating: number | null }) => row.rating)
+        .filter((rating: number | null) => rating != null);
+      expect(nonNull).toEqual([...nonNull].sort((left, right) => right - left));
+    });
+
     it("returns multi-view JSON as array", () => {
       const { stdout, exitCode } = run(
         ["base", "run", "multi-view.base", "--format", "json"],

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add `view run` and `view validate` for canonical v0.3 Markdown view records,
+  including explicit invocation context and headless result formats.
+
 ## 0.3.0-rc.1 - 2026-07-19
 - Publish the first v0.3 release candidate against the registry-hosted mdbase core package.
 - Verify the installed CLI tarball on Linux, macOS, and Windows.

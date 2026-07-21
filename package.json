@@ -1,7 +1,7 @@
 {
   "name": "mdbase-cli",
   "version": "0.3.0-rc.1",
-  "description": "CLI tool for mdbase collections — validate, query, CRUD, and execute Obsidian .base files",
+  "description": "CLI tool for mdbase collections — validate, query, run Markdown views, CRUD, and execute Obsidian .base files",
   "license": "MIT",
   "repository": {
     "type": "git",

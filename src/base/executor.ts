@@ -91,10 +91,8 @@ async function executeView(
   // 1. Build the where clause by combining global + view filters
   const where = buildWhere(baseFile.filters, view.filters);
 
-  // 2. Build order_by from view's order property
-  //    In .base files, order is just property IDs for column display order,
-  //    not sort order. Sorting comes from the view's groupBy direction.
-  //    We pass order_by from groupBy if present.
+  // 2. Build order_by from the Base's sort array. `order` is column selection
+  //    and groupBy is only a compatibility fallback for older fixtures.
   const orderBy = buildOrderBy(view);
 
   // 3. Determine limit
@@ -256,6 +254,14 @@ function translateExpression(expr: string): string {
 function buildOrderBy(
   view: BaseView,
 ): Array<{ field: string; direction?: string }> | undefined {
+  if (view.sort?.length) {
+    return view.sort
+      .filter((entry) => entry && typeof entry.property === "string")
+      .map((entry) => ({
+        field: normalizePropertyId(entry.property),
+        direction: entry.direction?.toLowerCase() ?? "asc",
+      }));
+  }
   if (!view.groupBy) return undefined;
 
   const prop = normalizePropertyId(view.groupBy.property);
