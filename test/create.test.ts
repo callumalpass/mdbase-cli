@@ -142,6 +142,35 @@ describe("create command", () => {
     });
   });
 
+  describe("validation issues", () => {
+    it("includes issues in JSON output when validation fails", () => {
+      const file = trackFile("create-invalid.md");
+      const { stdout, exitCode } = run(
+        ["create", file, "-t", "note", "-f", "rating=10", "--format", "json"],
+        VALID,
+      );
+      expect(exitCode).toBe(2);
+      const parsed = JSON.parse(stdout);
+      expect(parsed.error.code).toBe("validation_failed");
+      expect(parsed.issues).toBeInstanceOf(Array);
+      const codes = parsed.issues.map((i: { code: string }) => i.code);
+      expect(codes).toContain("missing_required");
+      expect(codes).toContain("number_too_large");
+    });
+
+    it("prints issues in text output when validation fails", () => {
+      const file = trackFile("create-invalid.md");
+      const { exitCode, stderr } = run(
+        ["create", file, "-t", "note", "-f", "rating=10"],
+        VALID,
+      );
+      expect(exitCode).toBe(2);
+      expect(stderr).toContain("Validation failed on create");
+      expect(stderr).toContain("missing_required");
+      expect(stderr).toContain("number_too_large");
+    });
+  });
+
   describe("error handling", () => {
     it("exits 1 for path conflict", () => {
       const { exitCode, stderr } = run(

@@ -4,7 +4,7 @@ import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
 import type { MdbaseError } from "@callumalpass/mdbase";
 import yaml from "js-yaml";
-import { finishCommand, parseFieldValue } from "../utils.js";
+import { finishCommand, formatIssue, parseFieldValue } from "../utils.js";
 
 function parseFields(fieldArgs: string[]): Record<string, unknown> | null {
   const frontmatter: Record<string, unknown> = {};
@@ -93,19 +93,6 @@ export function registerCreate(program: Command): void {
       const exitCode = outputResult(result, relativePath, opts);
       await finishCommand(collection, exitCode);
     });
-}
-
-function formatIssue(issue: MdbaseError): string {
-  const severity = issue.severity ?? "error";
-  const tag =
-    severity === "error"
-      ? chalk.red("error")
-      : severity === "warning"
-        ? chalk.yellow("warn")
-        : chalk.blue("info");
-
-  const field = issue.field ? ` field ${chalk.bold(issue.field)}` : "";
-  return `  ${tag}${field}: ${issue.message} ${chalk.dim(`[${issue.code}]`)}`;
 }
 
 function outputResult(

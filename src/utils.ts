@@ -1,6 +1,22 @@
+import chalk from "chalk";
+import type { MdbaseError } from "@callumalpass/mdbase";
+
 type ClosableCollection = {
   close(): Promise<void>;
 };
+
+export function formatIssue(issue: MdbaseError): string {
+  const severity = issue.severity ?? "error";
+  const tag =
+    severity === "error"
+      ? chalk.red("error")
+      : severity === "warning"
+        ? chalk.yellow("warn")
+        : chalk.blue("info");
+
+  const field = issue.field ? ` field ${chalk.bold(issue.field)}` : "";
+  return `  ${tag}${field}: ${issue.message} ${chalk.dim(`[${issue.code}]`)}`;
+}
 
 export async function finishCommand(
   collection: ClosableCollection | null | undefined,

@@ -2,8 +2,9 @@ import { Command } from "commander";
 import path from "node:path";
 import chalk from "chalk";
 import { Collection } from "@callumalpass/mdbase";
+import type { MdbaseError } from "@callumalpass/mdbase";
 import yaml from "js-yaml";
-import { finishCommand, parseFieldValue } from "../utils.js";
+import { finishCommand, formatIssue, parseFieldValue } from "../utils.js";
 
 function parseFields(fieldArgs: string[]): Record<string, unknown> | null {
   const fields: Record<string, unknown> = {};
@@ -97,10 +98,20 @@ export function registerUpdate(program: Command): void {
           : result.error.code === "permission_denied" ? 5
           : 1;
 
+        const issues = (result as { issues?: MdbaseError[] }).issues;
         if (opts.format === "json") {
-          console.log(JSON.stringify({ error: result.error }, null, 2));
+          const output: Record<string, unknown> = { error: result.error };
+          if (issues) {
+            output.issues = issues;
+          }
+          console.log(JSON.stringify(output, null, 2));
         } else {
           console.error(chalk.red(`error: ${result.error.message}`));
+          if (issues) {
+            for (const issue of issues) {
+              console.error(formatIssue(issue));
+            }
+          }
         }
         await finishCommand(collection, exitCode);
         return;

@@ -6,6 +6,7 @@ import path from "node:path";
 const CLI = path.resolve(__dirname, "../src/cli.ts");
 const TSX_CLI = path.resolve(__dirname, "../node_modules/tsx/dist/cli.mjs");
 const VALID = path.resolve(__dirname, "fixtures/valid-collection");
+const STRICT = path.resolve(__dirname, "fixtures/strict-collection");
 
 function run(args: string[], cwd: string): { stdout: string; stderr: string; exitCode: number } {
   try {
@@ -193,6 +194,33 @@ describe("update command", () => {
       );
       expect(exitCode).toBe(1);
       expect(stderr).toContain("invalid field format");
+    });
+  });
+
+  describe("validation issues", () => {
+    it("includes issues in JSON output when validation fails", () => {
+      const { stdout, exitCode } = run(
+        ["update", "hello.md", "-f", "rating=10", "--format", "json"],
+        STRICT,
+      );
+      expect(exitCode).toBe(2);
+      const parsed = JSON.parse(stdout);
+      expect(parsed.error.code).toBe("validation_failed");
+      expect(parsed.issues).toBeInstanceOf(Array);
+      expect(parsed.issues.length).toBeGreaterThan(0);
+      expect(parsed.issues[0].field).toBe("rating");
+      expect(parsed.issues[0].code).toBe("number_too_large");
+    });
+
+    it("prints issues in text output when validation fails", () => {
+      const { exitCode, stderr } = run(
+        ["update", "hello.md", "-f", "rating=10"],
+        STRICT,
+      );
+      expect(exitCode).toBe(2);
+      expect(stderr).toContain("Validation failed on update");
+      expect(stderr).toContain("rating");
+      expect(stderr).toContain("number_too_large");
     });
   });
 
