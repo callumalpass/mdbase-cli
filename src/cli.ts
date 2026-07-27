@@ -14,6 +14,7 @@ import { registerDelete } from "./commands/delete.js";
 import { registerRename } from "./commands/rename.js";
 import { registerTypes } from "./commands/types.js";
 import { registerBase } from "./commands/base.js";
+import { registerView } from "./commands/view.js";
 import { registerInit } from "./commands/init.js";
 import { registerLint } from "./commands/lint.js";
 import { registerFmt } from "./commands/fmt.js";
@@ -126,6 +127,7 @@ registerDelete(program);
 registerRename(program);
 registerTypes(program);
 registerMigrate(program);
+registerView(program);
 
 // Obsidian Bases integration
 registerBase(program);

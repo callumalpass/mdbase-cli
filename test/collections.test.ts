@@ -1,11 +1,15 @@
-import { describe, it, expect, afterEach } from "vitest";
-import { execFileSync } from "node:child_process";
+import { describe, it, expect, afterEach, vi } from "vitest";
+import { execFile, execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { promisify } from "node:util";
+
+import { writeRegistry } from "../src/collections/registry.js";
 
 const CLI = path.resolve(__dirname, "../src/cli.ts");
 const TSX_CLI = path.resolve(__dirname, "../node_modules/tsx/dist/cli.mjs");
+const execFileAsync = promisify(execFile);
 const tempDirs: string[] = [];
 
 function run(
@@ -206,5 +210,86 @@ describe("collections command", () => {
     const paths = run(["collections", "files", "--alias", "one", "--format", "paths"], workspace, env);
     expect(paths.exitCode).toBe(0);
     expect(paths.stdout.trim()).toBe("one:a.md");
+  });
+
+  it("preserves every successful concurrent registry update", async () => {
+    const workspace = makeTempDir();
+    const registryPath = path.join(workspace, "state", "collections.json");
+    const env = {
+      ...process.env,
+      NO_COLOR: "1",
+      MDBASE_COLLECTIONS_REGISTRY: registryPath,
+    };
+    const collectionCount = 12;
+    const collections = Array.from({ length: collectionCount }, (_, index) => {
+      const collectionPath = path.join(workspace, `collection-${index}`);
+      writeCollectionConfig(collectionPath, `Collection ${index}`);
+      return collectionPath;
+    });
+
+    let observing = true;
+    const parseFailures: string[] = [];
+    const observer = (async () => {
+      while (observing) {
+        if (fs.existsSync(registryPath)) {
+          try {
+            JSON.parse(fs.readFileSync(registryPath, "utf-8"));
+          } catch (error) {
+            parseFailures.push(String(error));
+          }
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1));
+      }
+    })();
+
+    const additions = collections.map((collectionPath, index) =>
+      execFileAsync(
+        process.execPath,
+        [TSX_CLI, CLI, "collections", "add", `collection-${index}`, collectionPath],
+        { cwd: workspace, env, encoding: "utf-8" },
+      ),
+    );
+    try {
+      await Promise.all(additions);
+    } finally {
+      observing = false;
+      await observer;
+    }
+
+    expect(parseFailures).toEqual([]);
+    const registry = JSON.parse(fs.readFileSync(registryPath, "utf-8"));
+    expect(registry.collections).toHaveLength(collectionCount);
+    expect(registry.collections.map(({ alias }: { alias: string }) => alias)).toEqual(
+      Array.from({ length: collectionCount }, (_, index) => `collection-${index}`).sort(),
+    );
+  });
+
+  it("retries atomic replacement while a Windows reader holds the registry", async () => {
+    const workspace = makeTempDir();
+    const registryPath = path.join(workspace, "state", "collections.json");
+    await writeRegistry([], registryPath);
+
+    const nativeRename = fs.promises.rename.bind(fs.promises);
+    let attempts = 0;
+    const rename = vi
+      .spyOn(fs.promises, "rename")
+      .mockImplementation(async (source, target) => {
+        attempts += 1;
+        if (attempts <= 2) {
+          throw Object.assign(new Error("registry is open"), { code: "EPERM" });
+        }
+        return nativeRename(source, target);
+      });
+    try {
+      await writeRegistry([], registryPath);
+    } finally {
+      rename.mockRestore();
+    }
+
+    expect(attempts).toBe(3);
+    expect(JSON.parse(fs.readFileSync(registryPath, "utf-8"))).toEqual({
+      version: 1,
+      collections: [],
+    });
   });
 });
