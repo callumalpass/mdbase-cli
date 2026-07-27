@@ -1,7 +1,9 @@
 import fs from "node:fs";
+import { randomUUID } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import { loadConfig } from "@callumalpass/mdbase";
+import lockfile from "proper-lockfile";
 
 export interface CollectionRegistryEntry {
   alias: string;
@@ -113,10 +115,80 @@ export async function writeRegistry(
 
   try {
     await fs.promises.mkdir(path.dirname(registryPath), { recursive: true });
-    await fs.promises.writeFile(registryPath, JSON.stringify(file, null, 2) + "\n", "utf-8");
+    const temporaryPath = `${registryPath}.${process.pid}.${randomUUID()}.tmp`;
+    try {
+      await fs.promises.writeFile(
+        temporaryPath,
+        JSON.stringify(file, null, 2) + "\n",
+        { encoding: "utf-8", mode: 0o600 },
+      );
+      await replaceRegistryFile(temporaryPath, registryPath);
+    } finally {
+      await fs.promises.rm(temporaryPath, { force: true }).catch(() => undefined);
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     throw new RegistryError("registry_write_failed", message);
+  }
+}
+
+async function replaceRegistryFile(
+  temporaryPath: string,
+  registryPath: string,
+): Promise<void> {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      await fs.promises.rename(temporaryPath, registryPath);
+      return;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      const sharingViolation =
+        code === "EPERM" || code === "EBUSY" || code === "EACCES";
+      if (!sharingViolation || attempt >= 100) throw error;
+      await new Promise((resolve) =>
+        setTimeout(resolve, Math.min(5 + attempt, 50)),
+      );
+    }
+  }
+}
+
+async function withRegistryLock<T>(
+  registryPath: string,
+  operation: () => Promise<T>,
+): Promise<T> {
+  try {
+    await fs.promises.mkdir(path.dirname(registryPath), { recursive: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new RegistryError("registry_write_failed", message);
+  }
+
+  let release: (() => Promise<void>) | undefined;
+  try {
+    release = await lockfile.lock(registryPath, {
+      realpath: false,
+      stale: 30_000,
+      update: 5_000,
+      retries: {
+        retries: 100,
+        factor: 1.15,
+        minTimeout: 10,
+        maxTimeout: 100,
+        randomize: true,
+      },
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new RegistryError(
+      "registry_lock_failed",
+      `Could not lock collection registry ${registryPath}: ${message}`,
+    );
+  }
+
+  try {
+    return await operation();
+  } finally {
+    await release().catch(() => undefined);
   }
 }
 
@@ -194,33 +266,35 @@ export async function addCollection(
 ): Promise<CollectionRegistryEntry> {
   const normalizedAlias = normalizeAlias(alias);
   const canonicalPath = await resolveCollectionPath(collectionPath);
-  const entries = await readRegistry(registryPath);
-
-  const existingAlias = findByAlias(entries, normalizedAlias);
-  if (existingAlias) {
-    throw new RegistryError("alias_exists", `Collection alias already exists: ${existingAlias.alias}`);
-  }
-
-  const existingPath = entries.find((entry) => entry.path === canonicalPath);
-  if (existingPath) {
-    throw new RegistryError(
-      "path_exists",
-      `Collection path already registered as alias "${existingPath.alias}"`,
-    );
-  }
-
-  const now = new Date().toISOString();
   const metadata = await loadCollectionMetadata(canonicalPath);
-  const entry: CollectionRegistryEntry = {
-    alias: normalizedAlias,
-    path: canonicalPath,
-    added_at: now,
-    updated_at: now,
-    ...metadata,
-  };
-  entries.push(entry);
-  await writeRegistry(entries, registryPath);
-  return entry;
+  return withRegistryLock(registryPath, async () => {
+    const entries = await readRegistry(registryPath);
+
+    const existingAlias = findByAlias(entries, normalizedAlias);
+    if (existingAlias) {
+      throw new RegistryError("alias_exists", `Collection alias already exists: ${existingAlias.alias}`);
+    }
+
+    const existingPath = entries.find((entry) => entry.path === canonicalPath);
+    if (existingPath) {
+      throw new RegistryError(
+        "path_exists",
+        `Collection path already registered as alias "${existingPath.alias}"`,
+      );
+    }
+
+    const now = new Date().toISOString();
+    const entry: CollectionRegistryEntry = {
+      alias: normalizedAlias,
+      path: canonicalPath,
+      added_at: now,
+      updated_at: now,
+      ...metadata,
+    };
+    entries.push(entry);
+    await writeRegistry(entries, registryPath);
+    return entry;
+  });
 }
 
 export async function listCollections(
@@ -247,15 +321,17 @@ export async function removeCollection(
   registryPath = resolveRegistryPath(),
 ): Promise<CollectionRegistryEntry> {
   const normalizedAlias = normalizeAlias(alias);
-  const entries = await readRegistry(registryPath);
-  const idx = entries.findIndex((entry) => aliasesEqual(entry.alias, normalizedAlias));
-  if (idx === -1) {
-    throw new RegistryError("collection_not_found", `Unknown collection alias: ${normalizedAlias}`);
-  }
+  return withRegistryLock(registryPath, async () => {
+    const entries = await readRegistry(registryPath);
+    const idx = entries.findIndex((entry) => aliasesEqual(entry.alias, normalizedAlias));
+    if (idx === -1) {
+      throw new RegistryError("collection_not_found", `Unknown collection alias: ${normalizedAlias}`);
+    }
 
-  const [removed] = entries.splice(idx, 1);
-  await writeRegistry(entries, registryPath);
-  return removed;
+    const [removed] = entries.splice(idx, 1);
+    await writeRegistry(entries, registryPath);
+    return removed;
+  });
 }
 
 export async function renameCollection(
@@ -270,18 +346,20 @@ export async function renameCollection(
     throw new RegistryError("invalid_alias", "New alias must be different from current alias");
   }
 
-  const entries = await readRegistry(registryPath);
-  const entry = findByAlias(entries, oldNormalized);
-  if (!entry) {
-    throw new RegistryError("collection_not_found", `Unknown collection alias: ${oldNormalized}`);
-  }
-  const existing = findByAlias(entries, newNormalized);
-  if (existing) {
-    throw new RegistryError("alias_exists", `Collection alias already exists: ${existing.alias}`);
-  }
+  return withRegistryLock(registryPath, async () => {
+    const entries = await readRegistry(registryPath);
+    const entry = findByAlias(entries, oldNormalized);
+    if (!entry) {
+      throw new RegistryError("collection_not_found", `Unknown collection alias: ${oldNormalized}`);
+    }
+    const existing = findByAlias(entries, newNormalized);
+    if (existing) {
+      throw new RegistryError("alias_exists", `Collection alias already exists: ${existing.alias}`);
+    }
 
-  entry.alias = newNormalized;
-  entry.updated_at = new Date().toISOString();
-  await writeRegistry(entries, registryPath);
-  return entry;
+    entry.alias = newNormalized;
+    entry.updated_at = new Date().toISOString();
+    await writeRegistry(entries, registryPath);
+    return entry;
+  });
 }
