@@ -1,47 +1,48 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 const packageRoot = resolve(import.meta.dirname, "..");
-const tempRoot = mkdtempSync(join(tmpdir(), "mdbase-cli-package-smoke-"));
-let tarball;
+const manifest = JSON.parse(
+  readFileSync(resolve(packageRoot, "package.json"), "utf8"),
+);
 
-function runNpm(args, options) {
-  if (process.env.npm_execpath) {
-    return execFileSync(process.execPath, [process.env.npm_execpath, ...args], options);
+if (manifest.private !== true) {
+  throw new Error("The retired TypeScript package must remain private");
+}
+for (const entrypoint of ["main", "types", "bin"]) {
+  if (entrypoint in manifest) {
+    throw new Error(`The retired package must not expose a ${entrypoint} entry point`);
   }
-  return execFileSync("npm", args, { ...options, shell: process.platform === "win32" });
+}
+if (!Array.isArray(manifest.files) || manifest.files.length !== 0) {
+  throw new Error("The retired package must have an explicitly empty files allowlist");
 }
 
-try {
-  const packed = JSON.parse(
-    runNpm(["pack", "--json"], {
+const runNpm = (args) => {
+  if (process.env.npm_execpath) {
+    return execFileSync(process.execPath, [process.env.npm_execpath, ...args], {
       cwd: packageRoot,
       encoding: "utf8",
-      stdio: ["ignore", "pipe", "inherit"],
-    }),
-  );
-  tarball = resolve(packageRoot, packed[0].filename);
-
-  writeFileSync(
-    join(tempRoot, "package.json"),
-    JSON.stringify({ name: "mdbase-cli-package-smoke", private: true }),
-  );
-  runNpm(["install", "--ignore-scripts", tarball], {
-    cwd: tempRoot,
-    stdio: "inherit",
-  });
-
-  const cli = join(tempRoot, "node_modules", "mdbase-cli", "dist", "cli.js");
-  const version = execFileSync(process.execPath, [cli, "--version"], {
-    cwd: tempRoot,
-    encoding: "utf8",
-  }).trim();
-  if (version !== "0.3.0-rc.1") {
-    throw new Error(`Unexpected installed CLI version: ${version}`);
+    });
   }
-} finally {
-  if (tarball) rmSync(tarball, { force: true });
-  rmSync(tempRoot, { recursive: true, force: true });
+  return execFileSync("npm", args, {
+    cwd: packageRoot,
+    encoding: "utf8",
+    shell: process.platform === "win32",
+  });
+};
+
+const packed = JSON.parse(runNpm(["pack", "--dry-run", "--json"]));
+const files = packed[0]?.files?.map((file) => file.path) ?? [];
+const forbidden = files.filter(
+  (path) =>
+    path === "mdbase-fzf" ||
+    path === "dist/cli.js" ||
+    path.startsWith("dist/"),
+);
+if (forbidden.length > 0) {
+  throw new Error(
+    `The retired package still includes executable output: ${forbidden.join(", ")}`,
+  );
 }

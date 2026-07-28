@@ -1,174 +1,27 @@
-# mdbase-cli
+# mdbase-cli (retired TypeScript implementation)
 
-Command-line tool for working with [mdbase](https://github.com/callumalpass/mdbase) collections. Validates, queries, executes portable Markdown view records, and performs CRUD operations on markdown document collections. It can also execute Obsidian `.base` files.
+This repository is retained as a migration reference only. It no longer
+publishes or installs an `mdbase` executable.
 
-## Install
-
-Requires Node.js 22+.
-
-### Recommended (npm global install)
-
-```sh
-npm install -g mdbase-cli
-mdbase --help
-```
-
-This installs both `mdbase` and `mdbase-fzf` on your `PATH`.
-
-### Project-local install
+The supported CLI is the native Rust `mdbase` executable built by
+[`mdbase-connect`](https://github.com/mdbase-dev/mdbase-connect). It combines
+the canonical `mdbase-rs` collection engine with direct filesystem access,
+Connect-managed collection access, daemon/service management, and built-in
+performance profiling.
 
 ```sh
-npm install --save-dev mdbase-cli
-npx mdbase --help
+mdbase --root ./notes validate
+mdbase --root ./notes query --types task
+mdbase --collection <uuid> query --types task
+mdbase connect status
+mdbase profile engine
 ```
 
-### Development from source
+The historical source and tests remain readable so that intentionally
+non-core presentation features can be evaluated without preserving a second
+collection engine. See [RETIREMENT.md](RETIREMENT.md) for the capability map
+and decisions.
 
-```sh
-git clone https://github.com/callumalpass/mdbase-cli.git
-cd mdbase-cli
-npm ci
-npm run build
-node dist/cli.js --help
-```
-
-## Usage
-
-```
-mdbase <command> [options]
-```
-
-Global option:
-
-- `-C, --collection <alias>` Run a command against a registered collection alias (from `mdbase collections add`).
-
-### Core commands
-
-| Command    | Description                                      |
-|------------|--------------------------------------------------|
-| `validate` | Validate documents against their type schemas    |
-| `query`    | Query documents with filters and sorting         |
-| `view`     | Validate or execute portable Markdown views      |
-| `read`     | Read a single document by path or ID             |
-| `create`   | Create a new document                            |
-| `update`   | Update an existing document                      |
-| `delete`   | Delete a document                                |
-| `rename`   | Rename a document                                |
-| `types`    | List or inspect registered types                 |
-| `migrate v0.3` | Analyze or safely apply a v0.2-to-v0.3 migration |
-
-### Obsidian Bases
-
-| Command    | Description                                      |
-|------------|--------------------------------------------------|
-| `base run` | Execute an Obsidian `.base` file                 |
-
-### Additional commands
-
-| Command    | Description                                      |
-|------------|--------------------------------------------------|
-| `init`     | Initialize a new mdbase collection               |
-| `lint`     | Lint documents for common issues                 |
-| `fmt`      | Format document frontmatter                      |
-| `export`   | Export documents to CSV or JSON                  |
-| `import`   | Import documents from CSV or JSON                |
-| `graph`    | Show link graph between documents                |
-| `stats`    | Print collection statistics                      |
-| `watch`    | Watch for file changes and re-validate           |
-| `diff`     | Show differences between document versions       |
-| `schema`   | Generate or inspect type schemas                 |
-| `collections` | Manage named collection registry entries      |
-
-### Fuzzy picker
-
-`mdbase-fzf` provides an interactive two-step picker powered by `fzf`:
-
-1. Choose a type (includes `untype` for files without a type).
-2. Browse matching files with key fields (display/title-style fields are prioritized), preview, then open in your editor.
-
-Requirements: `fzf` and `jq` on `PATH`.
-
-```sh
-mdbase-fzf
-```
-
-## Examples
-
-Validate all documents in the current directory:
-
-```sh
-mdbase validate .
-```
-
-Query documents of a given type:
-
-```sh
-mdbase query "status = published" --types note --sort created --limit 10
-```
-
-`query` defaults to `--format paths` for fast output on large vaults. Use `--format table` for tabular display.
-
-Execute an Obsidian `.base` file:
-
-```sh
-mdbase base run my-view.base
-```
-
-Execute a portable named view with a fixed invocation context:
-
-```sh
-mdbase view run views/tasks.md --view project-open --context projects/alpha.md
-mdbase view validate views/tasks.md
-```
-
-Analyze a v0.2 collection without changing it, review the diff and JSON report,
-then apply that exact analysis with backup and rollback protection:
-
-```sh
-mdbase migrate v0.3 analyze --report migration-report.json
-mdbase migrate v0.3 apply --report migration-report.json --yes
-mdbase migrate v0.3 recover --backup .mdbase/migrations/v0.3-<id> --yes
-```
-
-Apply writes a durable backup manifest before replacing files and journals each
-atomic replacement. `recover` verifies backup hashes before restoring an
-interrupted or applied migration and reports any paths that require manual
-recovery.
-
-Analysis exits with status 2 when records are incompatible or features need
-manual handling. Applying such a report additionally requires
-`--allow-partial`.
-
-Export to CSV:
-
-```sh
-mdbase export . --type note --format csv -o notes.csv
-```
-
-Initialize and register a collection alias:
-
-```sh
-mdbase init --name Work --example-type task --register work
-```
-
-`init` creates a v0.3 collection by default. Use `--spec-version 0.2.1` only when a legacy consumer requires the v0.2 type grammar.
-
-List markdown files from all registered collections:
-
-```sh
-mdbase collections files --format paths
-```
-
-## Example applications
-
-| Project | Description |
-|---------|-------------|
-| [mdbase-workouts](https://github.com/callumalpass/mdbase-workouts) | Workout tracker with chat interface, built on mdbase |
-
-## Spec
-
-mdbase-cli implements the [mdbase specification](https://github.com/callumalpass/mdbase-spec).
-
-## License
-
-MIT
+Do not publish this package, add a package-manager `bin` entry, or implement
+new collection behavior here. TypeScript application SDKs are separate
+packages and are not retired by this change.

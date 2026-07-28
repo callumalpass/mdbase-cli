@@ -4,6 +4,12 @@
 
 - Add `view run` and `view validate` for canonical v0.3 Markdown view records,
   including explicit invocation context and headless result formats.
+- Retire the TypeScript executable in favor of the unified native Rust
+  `mdbase` CLI.
+- Mark the package private and remove all package-manager binary and library
+  entry points.
+- Preserve the historical implementation only as a capability-migration
+  reference; TypeScript SDK packages are unaffected.
 
 ## 0.3.0-rc.1 - 2026-07-19
 - Publish the first v0.3 release candidate against the registry-hosted mdbase core package.
