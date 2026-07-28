@@ -1,7 +1,8 @@
 {
   "name": "mdbase-cli",
+  "private": true,
   "version": "0.3.0-rc.1",
-  "description": "CLI tool for mdbase collections — validate, query, run Markdown views, CRUD, and execute Obsidian .base files",
+  "description": "Retired TypeScript reference implementation of the mdbase CLI",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -12,17 +13,11 @@
   },
   "homepage": "https://github.com/callumalpass/mdbase-cli#readme",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "bin": {
-    "mdbase": "dist/cli.js",
-    "mdbase-fzf": "mdbase-fzf"
-  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
-    "test:package": "npm run build && node scripts/smoke-package.mjs",
+    "test:package": "node scripts/smoke-package.mjs",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -46,12 +41,5 @@
     "typescript": "^5.5.0",
     "vitest": "^4.1.10"
   },
-  "files": [
-    "dist",
-    "vendor",
-    "README.md",
-    "LICENSE",
-    "CHANGELOG.md",
-    "mdbase-fzf"
-  ]
+  "files": []
 }
